@@ -4,41 +4,95 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Save } from "lucide-react";
-import { CATEGORY_CONFIG, PAYMENT_MODE_CONFIG, VEHICLE_TYPE_CONFIG } from "@/lib/utils";
+import {
+  CATEGORY_CONFIG,
+  PAYMENT_MODE_CONFIG,
+  VEHICLE_TYPE_CONFIG,
+} from "@/lib/utils";
 import Link from "next/link";
 
 const QUICK_CHIPS = [
   {
     label: "🥩 Mutton",
-    values: { item: "Mutton", category: "MEAT", amount: 700, paymentMode: "PAYZAPP" },
+    values: {
+      item: "Mutton",
+      category: "MEAT",
+      amount: 700,
+      paymentMode: "PAYZAPP",
+    },
   },
   {
-    label: "⛽ Petrol",
-    values: { item: "Petrol", category: "VEHICLE", amount: 500, paymentMode: "HDFC_UPI_CC", vehicleType: "FUEL" },
+    label: "🚗 i20 Petrol",
+    values: {
+      item: "i20 Petrol",
+      category: "VEHICLE",
+      amount: 500,
+      paymentMode: "HDFC_UPI_CC",
+      vehicleType: "FUEL",
+    },
   },
   {
     label: "💊 Medicine",
-    values: { item: "Medicine", category: "MEDICAL", amount: 200, paymentMode: "HDFC_UPI_CC" },
+    values: {
+      item: "Medicine",
+      category: "MEDICAL",
+      amount: 200,
+      paymentMode: "HDFC_UPI_CC",
+    },
   },
   {
-    label: "📶 BSNL Fiber",
-    values: { item: "BSNL Fiber", category: "BILLS", amount: 799, paymentMode: "PAYZAPP" },
+    label: "📦 Online Grocery",
+    values: {
+      item: "Online Grocery",
+      category: "GROCERY_ONLINE",
+      amount: 500,
+      paymentMode: "FLIPKART_GIFT_CARD",
+    },
   },
   {
     label: "🛒 Grocery",
-    values: { item: "Grocery", category: "GROCERY_OFFLINE", amount: 500, paymentMode: "HDFC_UPI_CC" },
+    values: {
+      item: "Grocery",
+      category: "GROCERY_OFFLINE",
+      amount: 500,
+      paymentMode: "HDFC_UPI_CC",
+    },
+  },
+  {
+    label: "📄 Bills",
+    values: {
+      item: "Bills",
+      category: "BILLS",
+      amount: 1000,
+      paymentMode: "AMAZON_GIFT_CARD",
+    },
   },
   {
     label: "🛍️ Shopping",
-    values: { item: "Shopping", category: "SHOPPING", amount: 1000, paymentMode: "SBI_CC" },
+    values: {
+      item: "Shopping",
+      category: "SHOPPING",
+      amount: 1000,
+      paymentMode: "SBI_CC",
+    },
   },
   {
     label: "🍽️ Eating Out",
-    values: { item: "Eating Out", category: "EATING_OUT", amount: 500, paymentMode: "HDFC_UPI_CC" },
+    values: {
+      item: "Eating Out",
+      category: "EATING_OUT",
+      amount: 500,
+      paymentMode: "HDFC_UPI_CC",
+    },
   },
   {
     label: "🍿 Snacks",
-    values: { item: "Snacks", category: "SNACKS", amount: 100, paymentMode: "CASH" },
+    values: {
+      item: "Snacks",
+      category: "SNACKS",
+      amount: 100,
+      paymentMode: "HDFC_UPI_CC",
+    },
   },
 ];
 
@@ -263,7 +317,9 @@ export default function ExpenseFormClient({
             </label>
             <select
               value={form.vehicleType}
-              onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, vehicleType: e.target.value })
+              }
               className="form-input"
             >
               {Object.entries(VEHICLE_TYPE_CONFIG).map(([key, config]) => (

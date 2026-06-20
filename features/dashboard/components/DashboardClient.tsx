@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Wallet,
@@ -43,6 +44,12 @@ interface DashboardData {
   paymentBreakdown: Record<string, number>;
   topCategory: { category: string; amount: number } | null;
   topPaymentMode: { mode: string; amount: number } | null;
+  totalYearSpent: number;
+  yearDailyAverage: number;
+  yearCategoryBreakdown: Record<string, number>;
+  yearPaymentBreakdown: Record<string, number>;
+  topYearCategory: { category: string; amount: number } | null;
+  topYearPaymentMode: { mode: string; amount: number } | null;
   monthlyTrend: { month: string; amount: number }[];
   recentExpenses: {
     id: string;
@@ -90,7 +97,16 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function DashboardClient({ data }: { data: DashboardData }) {
-  const categoryData = Object.entries(data.categoryBreakdown)
+  const [timeframe, setTimeframe] = useState<"month" | "year">("month");
+
+  const activeBreakdown = timeframe === "month" ? data.categoryBreakdown : data.yearCategoryBreakdown;
+  const activePaymentBreakdown = timeframe === "month" ? data.paymentBreakdown : data.yearPaymentBreakdown;
+  const activeTotal = timeframe === "month" ? data.totalMonthSpent : data.totalYearSpent;
+  const activeDailyAverage = timeframe === "month" ? data.dailyAverage : data.yearDailyAverage;
+  const activeTopCategory = timeframe === "month" ? data.topCategory : data.topYearCategory;
+  const activeTopPaymentMode = timeframe === "month" ? data.topPaymentMode : data.topYearPaymentMode;
+
+  const categoryData = Object.entries(activeBreakdown)
     .map(([key, value]) => ({
       name: CATEGORY_CONFIG[key]?.label || key,
       value,
@@ -98,7 +114,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }))
     .sort((a, b) => b.value - a.value);
 
-  const paymentData = Object.entries(data.paymentBreakdown)
+  const paymentData = Object.entries(activePaymentBreakdown)
     .map(([key, value]) => ({
       name: PAYMENT_MODE_CONFIG[key]?.label || key,
       value,
@@ -106,7 +122,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }))
     .sort((a, b) => b.value - a.value);
 
-  const hasData = data.totalMonthSpent > 0 || data.recentExpenses.length > 0;
+  const hasData = activeTotal > 0 || data.recentExpenses.length > 0;
 
   return (
     <motion.div
@@ -115,6 +131,35 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       animate="show"
       className="p-4 md:p-8 space-y-6"
     >
+      {/* Timeframe Toggle Header */}
+      <motion.div variants={item} className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-white">Dashboard</h2>
+          <p className="text-xs text-[var(--text-muted)]">Personal financial insights</p>
+        </div>
+        <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-xl">
+          <button
+            onClick={() => setTimeframe("month")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              timeframe === "month"
+                ? "bg-[var(--bg-elevated)] text-white shadow-sm"
+                : "text-[var(--text-secondary)] hover:text-white"
+            }`}
+          >
+            This Month
+          </button>
+          <button
+            onClick={() => setTimeframe("year")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              timeframe === "year"
+                ? "bg-[var(--bg-elevated)] text-white shadow-sm"
+                : "text-[var(--text-secondary)] hover:text-white"
+            }`}
+          >
+            This Year
+          </button>
+        </div>
+      </motion.div>
       {/* ===== TOP METRIC CARDS ===== */}
       <motion.div
         variants={item}
@@ -127,13 +172,13 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               <Wallet className="w-4 h-4 text-emerald-400" />
             </div>
             <span className="text-xs text-[var(--text-muted)] font-medium">
-              Total Spent
+              Total Spent {timeframe === "month" ? "This Month" : "This Year"}
             </span>
           </div>
           <p className="text-xl md:text-2xl font-bold text-white">
-            {formatCurrency(data.totalMonthSpent)}
+            {formatCurrency(activeTotal)}
           </p>
-          {data.monthChange !== 0 && (
+          {timeframe === "month" && data.monthChange !== 0 && (
             <div className="flex items-center gap-1 mt-1">
               {data.monthChange > 0 ? (
                 <TrendingUp className="w-3 h-3 text-red-400" />
@@ -159,15 +204,17 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               <Calendar className="w-4 h-4 text-blue-400" />
             </div>
             <span className="text-xs text-[var(--text-muted)] font-medium">
-              Daily Average
+              Daily Average {timeframe === "month" ? "This Month" : "This Year"}
             </span>
           </div>
           <p className="text-xl md:text-2xl font-bold text-white">
-            {formatCurrency(data.dailyAverage)}
+            {formatCurrency(activeDailyAverage)}
           </p>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
-            Today: {formatCurrency(data.totalTodaySpent)}
-          </p>
+          {timeframe === "month" && (
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Today: {formatCurrency(data.totalTodaySpent)}
+            </p>
+          )}
         </div>
 
         {/* Top Category */}
@@ -181,18 +228,18 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </span>
           </div>
           <p className="text-lg md:text-xl font-bold text-white">
-            {data.topCategory
-              ? CATEGORY_CONFIG[data.topCategory.category]?.label || "—"
+            {activeTopCategory
+              ? CATEGORY_CONFIG[activeTopCategory.category]?.label || "—"
               : "—"}
           </p>
-          {data.topCategory && (
+          {activeTopCategory && (
             <p className="text-xs text-emerald-400 mt-1">
-              {formatCurrency(data.topCategory.amount)}{" "}
+              {formatCurrency(activeTopCategory.amount)}{" "}
               <span className="text-[var(--text-muted)]">
                 ·{" "}
-                {data.totalMonthSpent > 0
+                {activeTotal > 0
                   ? Math.round(
-                      (data.topCategory.amount / data.totalMonthSpent) * 100
+                      (activeTopCategory.amount / activeTotal) * 100
                     )
                   : 0}
                 % of total
@@ -212,18 +259,18 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </span>
           </div>
           <p className="text-lg md:text-xl font-bold text-white truncate">
-            {data.topPaymentMode
-              ? PAYMENT_MODE_CONFIG[data.topPaymentMode.mode]?.label || "—"
+            {activeTopPaymentMode
+              ? PAYMENT_MODE_CONFIG[activeTopPaymentMode.mode]?.label || "—"
               : "—"}
           </p>
-          {data.topPaymentMode && (
+          {activeTopPaymentMode && (
             <p className="text-xs text-amber-400 mt-1">
-              {formatCurrency(data.topPaymentMode.amount)}{" "}
+              {formatCurrency(activeTopPaymentMode.amount)}{" "}
               <span className="text-[var(--text-muted)]">
                 ·{" "}
-                {data.totalMonthSpent > 0
+                {activeTotal > 0
                   ? Math.round(
-                      (data.topPaymentMode.amount / data.totalMonthSpent) * 100
+                      (activeTopPaymentMode.amount / activeTotal) * 100
                     )
                   : 0}
                 % of total
@@ -348,7 +395,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                     <Tooltip
                       content={({ active, payload }) =>
                         active && payload?.[0] ? (
-                          <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
+                           <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
                             <p className="text-[var(--text-muted)]">
                               {payload[0].name}
                             </p>
@@ -365,7 +412,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               {/* Center label */}
               <div className="text-center -mt-[130px] mb-[60px]">
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(data.totalMonthSpent)}
+                  {formatCurrency(activeTotal)}
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">Total</p>
               </div>
@@ -389,8 +436,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       {formatCurrency(cat.value)}{" "}
                       <span className="text-[var(--text-muted)]">
                         (
-                        {data.totalMonthSpent > 0
-                          ? Math.round((cat.value / data.totalMonthSpent) * 100)
+                        {activeTotal > 0
+                          ? Math.round((cat.value / activeTotal) * 100)
                           : 0}
                         %)
                       </span>
@@ -400,7 +447,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               </div>
             </div>
           ) : (
-            <EmptyChart message="No expenses this month" />
+            <EmptyChart message={timeframe === "month" ? "No expenses this month" : "No expenses this year"} />
           )}
         </motion.div>
 
@@ -513,7 +560,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               </div>
               <div className="text-center -mt-[130px] mb-[60px]">
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(data.totalMonthSpent)}
+                  {formatCurrency(activeTotal)}
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">Total</p>
               </div>
@@ -536,8 +583,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       {formatCurrency(pm.value)}{" "}
                       <span className="text-[var(--text-muted)]">
                         (
-                        {data.totalMonthSpent > 0
-                          ? Math.round((pm.value / data.totalMonthSpent) * 100)
+                        {activeTotal > 0
+                          ? Math.round((pm.value / activeTotal) * 100)
                           : 0}
                         %)
                       </span>
