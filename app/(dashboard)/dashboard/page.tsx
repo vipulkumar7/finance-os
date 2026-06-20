@@ -23,59 +23,55 @@ async function getDashboardData(userId: string) {
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
 
-  // Current month expenses
-  const currentMonthExpenses = await prisma.expense.findMany({
-    where: { userId, date: { gte: monthStart, lte: monthEnd } },
-    orderBy: { date: "desc" },
-  });
-
-  // Last month expenses (for comparison)
-  const lastMonthExpenses = await prisma.expense.findMany({
-    where: { userId, date: { gte: lastMonthStart, lte: lastMonthEnd } },
-  });
-
-  // Today's expenses
-  const todayExpenses = await prisma.expense.findMany({
-    where: { userId, date: { gte: todayStart, lte: todayEnd } },
-  });
-
-  // This year expenses (monthly aggregation)
-  const yearExpenses = await prisma.expense.findMany({
-    where: { userId, date: { gte: yearStart, lte: yearEnd } },
-    orderBy: { date: "asc" },
-  });
-
-  // Recent expenses (last 5)
-  const recentExpenses = await prisma.expense.findMany({
-    where: { userId },
-    orderBy: { date: "desc" },
-    take: 5,
-  });
-
-  // Current year investments
-  const yearInvestments = await prisma.investmentEntry.findMany({
-    where: { userId, year: now.getFullYear() },
-    orderBy: [{ month: "asc" }],
-  });
-
-  // Latest net worth
-  const latestNetWorth = await prisma.netWorthSnapshot.findFirst({
-    where: { userId },
-    orderBy: [{ year: "desc" }, { month: "desc" }],
-  });
-
-  // Previous net worth (for comparison)
-  const previousNetWorth = await prisma.netWorthSnapshot.findFirst({
-    where: { userId },
-    orderBy: [{ year: "desc" }, { month: "desc" }],
-    skip: 1,
-  });
-
-  // Goals
-  const goals = await prisma.goal.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  // Fetch all dashboard data concurrently
+  const [
+    currentMonthExpenses,
+    lastMonthExpenses,
+    todayExpenses,
+    yearExpenses,
+    recentExpenses,
+    yearInvestments,
+    latestNetWorth,
+    previousNetWorth,
+    goals,
+  ] = await Promise.all([
+    prisma.expense.findMany({
+      where: { userId, date: { gte: monthStart, lte: monthEnd } },
+      orderBy: { date: "desc" },
+    }),
+    prisma.expense.findMany({
+      where: { userId, date: { gte: lastMonthStart, lte: lastMonthEnd } },
+    }),
+    prisma.expense.findMany({
+      where: { userId, date: { gte: todayStart, lte: todayEnd } },
+    }),
+    prisma.expense.findMany({
+      where: { userId, date: { gte: yearStart, lte: yearEnd } },
+      orderBy: { date: "asc" },
+    }),
+    prisma.expense.findMany({
+      where: { userId },
+      orderBy: { date: "desc" },
+      take: 5,
+    }),
+    prisma.investmentEntry.findMany({
+      where: { userId, year: now.getFullYear() },
+      orderBy: [{ month: "asc" }],
+    }),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+    }),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+      skip: 1,
+    }),
+    prisma.goal.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
   // Compute aggregates
   const totalMonthSpent = currentMonthExpenses.reduce(
