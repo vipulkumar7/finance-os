@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////
+// ENUMS
+//////////////////////////////
+
+enum ExpenseCategory {
+  GROCERY_OFFLINE
+  GROCERY_ONLINE
+  MEAT
+  MEDICAL
+  SHOPPING
+  BILLS
+  TRAVEL
+  EATING_OUT
+  SNACKS
+  FRUITS
+  VEGETABLES
+  SWEETS
+  VEHICLE
+  OTHERS
+}
+
+enum PaymentMode {
+  PAYZAPP
+  HDFC_UPI_CC
+  SBI_CC
+  HDFC_CC
+  JIO
+  YES_BANK_CC
+  AMAZON_GIFT_CARD
+  FLIPKART_GIFT_CARD
+  PHONE_PAY_GIFT_CARD
+  OTHER_BANK
+  CASH
+  PLUXEE
+}
+
+enum VehicleExpenseType {
+  FUEL
+  SERVICE
+  INSURANCE
+  PARKING
+  WASHING
+  REPAIRS
+  ACCESSORIES
+}
+
+//////////////////////////////
+// USER (NextAuth)
+//////////////////////////////
+model User {
+  id    String  @id @default(cuid())
+  name  String?
+  email String  @unique
+  image String?
+
+  createdAt DateTime @default(now())
+
+  accounts Account[]
+  sessions Session[]
+
+  expenses       Expense[]
+  investments    InvestmentEntry[]
+  netWorth       NetWorthSnapshot[]
+  goals          Goal[]
+  vehicleExpenses VehicleExpense[]
+}
+
+//////////////////////////////
+// NEXTAUTH TABLES
+//////////////////////////////
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+//////////////////////////////
+// EXPENSE
+//////////////////////////////
+model Expense {
+  id             String          @id @default(cuid())
+  date           DateTime
+  item           String
+  amount         Float
+  category       ExpenseCategory
+  paymentMode    PaymentMode
+  notes          String?
+  userId         String
+  vehicleExpense VehicleExpense?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date(sort: Desc)])
+  @@index([category])
+  @@index([paymentMode])
+}
+
+//////////////////////////////
+// INVESTMENT ENTRY
+//////////////////////////////
+model InvestmentEntry {
+  id                   String  @id @default(cuid())
+  month                Int
+  year                 Int
+  mutualFundInvestment Float   @default(0)
+  stockInvestment      Float   @default(0)
+  fdInvestment         Float   @default(0)
+  arbitrageInvestment  Float   @default(0)
+  liquidFundInvestment Float   @default(0)
+  npsContribution      Float   @default(0)
+  epfContribution      Float   @default(0)
+  goldInvestment       Float   @default(0)
+  notes                String?
+  userId               String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([month, year, userId])
+  @@index([userId])
+}
+
+//////////////////////////////
+// NET WORTH SNAPSHOT
+//////////////////////////////
+model NetWorthSnapshot {
+  id    String @id @default(cuid())
+  month Int
+  year  Int
+
+  // Assets
+  mutualFundsValue    Float @default(0)
+  stocksValue         Float @default(0)
+  epfValue            Float @default(0)
+  npsValue            Float @default(0)
+  fdValue             Float @default(0)
+  liquidFundValue     Float @default(0)
+  arbitrageFundValue  Float @default(0)
+  savingsAccountValue Float @default(0)
+  goldValue           Float @default(0)
+
+  // Liabilities
+  personalLoan Float @default(0)
+  homeLoan     Float @default(0)
+  otherLoan    Float @default(0)
+
+  // Computed
+  totalAssets      Float @default(0)
+  totalLiabilities Float @default(0)
+  netWorth         Float @default(0)
+
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([month, year, userId])
+  @@index([userId])
+}
+
+//////////////////////////////
+// GOAL
+//////////////////////////////
+model Goal {
+  id            String   @id @default(cuid())
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  targetDate    DateTime
+  icon          String   @default("🎯")
+  description   String?
+  userId        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+//////////////////////////////
+// VEHICLE EXPENSE
+//////////////////////////////
+model VehicleExpense {
+  id        String             @id @default(cuid())
+  date      DateTime
+  amount    Float
+  type      VehicleExpenseType
+  notes     String?
+  userId    String
+  expenseId String?            @unique
+  expense   Expense?           @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date(sort: Desc)])
+  @@index([type])
+}
