@@ -70,14 +70,14 @@ export default function ExpenseListClient({
   const grouped = useMemo(() => {
     const groups: Record<string, Expense[]> = {};
     filtered.forEach((e) => {
-      const dateKey = new Date(e.date).toDateString();
+      const dateKey = e.date.split("T")[0];
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(e);
     });
     return Object.entries(groups);
   }, [filtered]);
 
-  const totalFiltered = filtered.reduce((s, e) => s + e.amount, 0);
+  const totalFiltered = filtered.reduce((s: number, e) => s + e.amount, 0);
 
   return (
     <div className="p-4 md:p-8">

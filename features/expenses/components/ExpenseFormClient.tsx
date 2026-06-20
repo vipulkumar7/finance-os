@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Save } from "lucide-react";
 import {
   CATEGORY_CONFIG,
@@ -116,6 +116,7 @@ export default function ExpenseFormClient({
   const isEdit = !!initialData;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [form, setForm] = useState({
     date: initialData?.date
@@ -129,7 +130,15 @@ export default function ExpenseFormClient({
     notes: initialData?.notes || "",
   });
 
-  const handleChip = (values: any) => {
+interface QuickChipValues {
+  item: string;
+  category: string;
+  amount: number;
+  paymentMode: string;
+  vehicleType?: string;
+}
+
+  const handleChip = (values: QuickChipValues) => {
     setForm((prev) => ({
       ...prev,
       item: values.item,
@@ -168,16 +177,20 @@ export default function ExpenseFormClient({
 
       router.push("/expenses");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     if (!initialData?.id) return;
-    if (!confirm("Delete this expense?")) return;
+    setShowConfirm(false);
     setLoading(true);
 
     try {
@@ -389,6 +402,53 @@ export default function ExpenseFormClient({
           )}
         </div>
       </motion.form>
+
+      {/* Premium Confirm Modal */}
+      <AnimatePresence>
+        {showConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="glass-card-elevated w-full max-w-sm p-6 text-center space-y-6 !border-red-500/20"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-bold text-white">Delete Expense?</h3>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Are you sure you want to delete this expense? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(false)}
+                  className="btn-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="btn-primary !bg-red-500/90 hover:!bg-red-500 text-white flex-1"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

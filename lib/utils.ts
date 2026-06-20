@@ -59,6 +59,7 @@ export function formatDate(date: Date | string): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -70,6 +71,7 @@ export function formatDateShort(date: Date | string): string {
   return d.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
+    timeZone: "UTC",
   });
 }
 

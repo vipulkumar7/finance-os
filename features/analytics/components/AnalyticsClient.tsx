@@ -15,21 +15,68 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
 
+interface AnalyticsInvestment {
+  month: number;
+  year: number;
+  mutualFundInvestment: number;
+  stockInvestment: number;
+  fdInvestment: number;
+  arbitrageInvestment: number;
+  liquidFundInvestment: number;
+  npsContribution: number;
+  epfContribution: number;
+  goldInvestment: number;
+}
+
+interface AnalyticsNetWorthSnapshot {
+  month: number;
+  year: number;
+  netWorth: number;
+}
+
+interface SerializedExpense {
+  id: string;
+  date: string;
+  amount: number;
+  category: string;
+  paymentMode: string;
+  item: string;
+  notes: string | null;
+}
+
+interface SerializedVehicleExpense {
+  id: string;
+  date: string;
+  amount: number;
+  type: string;
+  notes: string | null;
+}
+
 interface Props {
-  expenses: any[];
-  investments: any[];
-  netWorthSnapshots: any[];
-  vehicleExpenses: any[];
+  expenses: SerializedExpense[];
+  investments: AnalyticsInvestment[];
+  netWorthSnapshots: AnalyticsNetWorthSnapshot[];
+  vehicleExpenses: SerializedVehicleExpense[];
   year: number;
   availableYears: number[];
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    color?: string;
+  }>;
+  label?: string;
+}
+
+function ChartTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
       <p className="text-[var(--text-muted)]">{label}</p>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i: number) => (
         <p key={i} className="text-white font-semibold">{p.name}: {formatCurrency(p.value)}</p>
       ))}
     </div>
@@ -49,14 +96,14 @@ export default function AnalyticsClient({ expenses, investments, netWorthSnapsho
   // Monthly expense trend
   const monthlyExpenses = useMemo(() => {
     const months: Record<number, number> = {};
-    expenses.forEach((e) => { const m = new Date(e.date).getMonth() + 1; months[m] = (months[m] || 0) + e.amount; });
+    expenses.forEach((e) => { const m = new Date(e.date).getUTCMonth() + 1; months[m] = (months[m] || 0) + e.amount; });
     return Array.from({ length: 12 }, (_, i) => ({ month: getMonthName(i + 1), amount: months[i + 1] || 0 }));
   }, [expenses]);
 
   // Monthly investment trend
   const monthlyInvestments = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
-      const inv = investments.find((x: any) => x.month === i + 1);
+      const inv = investments.find((x) => x.month === i + 1);
       const total = inv ? inv.mutualFundInvestment + inv.stockInvestment + inv.fdInvestment + inv.arbitrageInvestment + inv.liquidFundInvestment + inv.npsContribution + inv.epfContribution + inv.goldInvestment : 0;
       return { month: getMonthName(i + 1), amount: total };
     });
@@ -65,26 +112,26 @@ export default function AnalyticsClient({ expenses, investments, netWorthSnapsho
   // Category breakdown
   const categoryData = useMemo(() => {
     const cats: Record<string, number> = {};
-    expenses.forEach((e: any) => { cats[e.category] = (cats[e.category] || 0) + e.amount; });
+    expenses.forEach((e) => { cats[e.category] = (cats[e.category] || 0) + e.amount; });
     return Object.entries(cats).map(([k, v]) => ({ name: CATEGORY_CONFIG[k]?.label || k, value: v, color: CATEGORY_CONFIG[k]?.color || "#6b7280" })).sort((a, b) => b.value - a.value);
   }, [expenses]);
 
   // Payment mode breakdown
   const paymentData = useMemo(() => {
     const pms: Record<string, number> = {};
-    expenses.forEach((e: any) => { pms[e.paymentMode] = (pms[e.paymentMode] || 0) + e.amount; });
+    expenses.forEach((e) => { pms[e.paymentMode] = (pms[e.paymentMode] || 0) + e.amount; });
     return Object.entries(pms).map(([k, v]) => ({ name: PAYMENT_MODE_CONFIG[k]?.label || k, value: v, color: PAYMENT_MODE_CONFIG[k]?.color || "#6b7280" })).sort((a, b) => b.value - a.value);
   }, [expenses]);
 
   // Net worth trend
   const nwTrend = useMemo(() => {
-    return netWorthSnapshots.map((s: any) => ({ label: `${getMonthName(s.month)} ${s.year}`, netWorth: s.netWorth }));
+    return netWorthSnapshots.map((s) => ({ label: `${getMonthName(s.month)} ${s.year}`, netWorth: s.netWorth }));
   }, [netWorthSnapshots]);
 
   // Vehicle breakdown
   const vehicleData = useMemo(() => {
     const types: Record<string, number> = {};
-    vehicleExpenses.forEach((e: any) => { types[e.type] = (types[e.type] || 0) + e.amount; });
+    vehicleExpenses.forEach((e) => { types[e.type] = (types[e.type] || 0) + e.amount; });
     return Object.entries(types).map(([k, v]) => ({ name: VEHICLE_TYPE_CONFIG[k]?.label || k, value: v, color: VEHICLE_TYPE_CONFIG[k]?.color || "#6b7280" })).sort((a, b) => b.value - a.value);
   }, [vehicleExpenses]);
 

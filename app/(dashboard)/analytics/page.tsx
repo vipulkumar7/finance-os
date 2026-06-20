@@ -4,6 +4,31 @@ import { prisma } from "@/lib/db/prisma";
 import AnalyticsClient from "@/features/analytics/components/AnalyticsClient";
 import { startOfYear, endOfYear } from "date-fns";
 
+interface DBExpense {
+  id: string;
+  date: Date;
+  item: string;
+  amount: number;
+  category: any;
+  paymentMode: any;
+  notes: string | null;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface DBVehicleExpense {
+  id: string;
+  date: Date;
+  amount: number;
+  type: any;
+  notes: string | null;
+  userId: string;
+  expenseId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -38,8 +63,8 @@ export default async function AnalyticsPage({
   const defaultYear = newestExpense ? newestExpense.date.getFullYear() : currentYear;
   const selectedYear = params?.year ? parseInt(params.year, 10) : defaultYear;
 
-  const yearStart = startOfYear(new Date(selectedYear, 5, 15)); // Use mid-year to avoid TZ shifts
-  const yearEnd = endOfYear(new Date(selectedYear, 5, 15));
+  const yearStart = new Date(Date.UTC(selectedYear, 0, 1));
+  const yearEnd = new Date(Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999));
 
   const [expenses, investments, netWorthSnapshots, vehicleExpenses] =
     await Promise.all([
@@ -49,7 +74,7 @@ export default async function AnalyticsPage({
           date: { gte: yearStart, lte: yearEnd },
         },
         orderBy: { date: "asc" },
-      }),
+      }) as Promise<DBExpense[]>,
       prisma.investmentEntry.findMany({
         where: { userId: session.user.id, year: selectedYear },
         orderBy: { month: "asc" },
@@ -64,23 +89,21 @@ export default async function AnalyticsPage({
           date: { gte: yearStart, lte: yearEnd },
         },
         orderBy: { date: "asc" },
-      }),
+      }) as Promise<DBVehicleExpense[]>,
     ]);
 
   return (
     <AnalyticsClient
-      expenses={expenses.map((e: { date: { toISOString: () => any } }) => ({
+      expenses={expenses.map((e: DBExpense) => ({
         ...e,
         date: e.date.toISOString(),
       }))}
       investments={investments}
       netWorthSnapshots={netWorthSnapshots}
-      vehicleExpenses={vehicleExpenses.map(
-        (e: { date: { toISOString: () => any } }) => ({
-          ...e,
-          date: e.date.toISOString(),
-        }),
-      )}
+      vehicleExpenses={vehicleExpenses.map((e: DBVehicleExpense) => ({
+        ...e,
+        date: e.date.toISOString(),
+      }))}
       year={selectedYear}
       availableYears={availableYears}
     />

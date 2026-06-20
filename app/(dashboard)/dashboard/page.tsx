@@ -11,23 +11,50 @@ import {
   startOfDay,
   endOfDay,
 } from "date-fns";
+export interface DashboardExpense {
+  id: string;
+  date: Date;
+  item: string;
+  amount: number;
+  category: any; // Use any or string to support prisma enums without namespace imports
+  paymentMode: any;
+}
 
-async function getDashboardData(userId: string, selectedYear: number, selectedMonth: number) {
+export interface DashboardInvestment {
+  month: number;
+  year: number;
+  mutualFundInvestment: number;
+  stockInvestment: number;
+  fdInvestment: number;
+  arbitrageInvestment: number;
+  liquidFundInvestment: number;
+  npsContribution: number;
+  epfContribution: number;
+  goldInvestment: number;
+}
+
+async function getDashboardData(
+  userId: string,
+  selectedYear: number,
+  selectedMonth: number,
+) {
   const now = new Date();
-  
+
   // selectedMonth is 0-indexed (0 = Jan, 11 = Dec)
-  const targetDate = new Date(selectedYear, selectedMonth, 15);
-  
-  const monthStart = startOfMonth(targetDate);
-  const monthEnd = endOfMonth(targetDate);
-  const yearStart = startOfYear(targetDate);
-  const yearEnd = endOfYear(targetDate);
-  const lastMonthStart = startOfMonth(subMonths(targetDate, 1));
-  const lastMonthEnd = endOfMonth(subMonths(targetDate, 1));
-  
-  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth();
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
+  const monthStart = new Date(Date.UTC(selectedYear, selectedMonth, 1));
+  const monthEnd = new Date(Date.UTC(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999));
+  const yearStart = new Date(Date.UTC(selectedYear, 0, 1));
+  const yearEnd = new Date(Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999));
+
+  const lastMonthYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
+  const lastMonthIdx = selectedMonth === 0 ? 11 : selectedMonth - 1;
+  const lastMonthStart = new Date(Date.UTC(lastMonthYear, lastMonthIdx, 1));
+  const lastMonthEnd = new Date(Date.UTC(lastMonthYear, lastMonthIdx + 1, 0, 23, 59, 59, 999));
+
+  const isCurrentMonth =
+    selectedYear === now.getFullYear() && selectedMonth === now.getMonth();
+  const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const todayEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999));
 
   // Find dynamic list of years with data
   const oldestExpense = await prisma.expense.findFirst({
@@ -40,11 +67,15 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
     orderBy: { date: "desc" },
     select: { date: true },
   });
-  
+
   const currentYear = now.getFullYear();
-  const startYear = oldestExpense ? oldestExpense.date.getFullYear() : currentYear - 1;
-  const endYear = newestExpense ? newestExpense.date.getFullYear() : currentYear;
-  
+  const startYear = oldestExpense
+    ? oldestExpense.date.getFullYear()
+    : currentYear - 1;
+  const endYear = newestExpense
+    ? newestExpense.date.getFullYear()
+    : currentYear;
+
   const availableYears = [];
   for (let y = startYear; y <= Math.max(endYear, currentYear); y++) {
     availableYears.push(y);
@@ -70,7 +101,9 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
       where: { userId, date: { gte: lastMonthStart, lte: lastMonthEnd } },
     }),
     isCurrentMonth
-      ? prisma.expense.findMany({ where: { userId, date: { gte: todayStart, lte: todayEnd } } })
+      ? prisma.expense.findMany({
+          where: { userId, date: { gte: todayStart, lte: todayEnd } },
+        })
       : Promise.resolve([]),
     prisma.expense.findMany({
       where: { userId, date: { gte: yearStart, lte: yearEnd } },
@@ -90,8 +123,8 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
         userId,
         OR: [
           { year: { lt: selectedYear } },
-          { year: selectedYear, month: { lte: selectedMonth + 1 } }
-        ]
+          { year: selectedYear, month: { lte: selectedMonth + 1 } },
+        ],
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
     }),
@@ -100,8 +133,8 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
         userId,
         OR: [
           { year: { lt: selectedYear } },
-          { year: selectedYear, month: { lte: selectedMonth } }
-        ]
+          { year: selectedYear, month: { lte: selectedMonth } },
+        ],
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
     }),
@@ -113,18 +146,18 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
 
   // Compute aggregates
   const totalMonthSpent = currentMonthExpenses.reduce(
-    (s: any, e: { amount: any }) => s + e.amount,
+    (s: number, e: DashboardExpense) => s + e.amount,
     0,
   );
   const totalLastMonthSpent = lastMonthExpenses.reduce(
-    (s: any, e: { amount: any }) => s + e.amount,
+    (s: number, e: DashboardExpense) => s + e.amount,
     0,
   );
   const totalTodaySpent = todayExpenses.reduce(
-    (s: any, e: { amount: any }) => s + e.amount,
+    (s: number, e: DashboardExpense) => s + e.amount,
     0,
   );
-  
+
   const daysInMonth = isCurrentMonth
     ? now.getDate()
     : new Date(selectedYear, selectedMonth + 1, 0).getDate();
@@ -133,14 +166,14 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
 
   // Category breakdown
   const categoryBreakdown: Record<string, number> = {};
-  currentMonthExpenses.forEach((e: any) => {
+  currentMonthExpenses.forEach((e: DashboardExpense) => {
     categoryBreakdown[e.category] =
       (categoryBreakdown[e.category] || 0) + e.amount;
   });
 
   // Payment mode breakdown
   const paymentBreakdown: Record<string, number> = {};
-  currentMonthExpenses.forEach((e: any) => {
+  currentMonthExpenses.forEach((e: DashboardExpense) => {
     paymentBreakdown[e.paymentMode] =
       (paymentBreakdown[e.paymentMode] || 0) + e.amount;
   });
@@ -152,15 +185,15 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
 
   // Top payment mode
   const topPaymentMode = Object.entries(paymentBreakdown).sort(
-    (a: any, b: any) => b[1] - a[1],
+    (a, b) => b[1] - a[1],
   )[0];
 
   // Yearly calculations
   const totalYearSpent = yearExpenses.reduce(
-    (s: any, e: { amount: any }) => s + e.amount,
+    (s: number, e: DashboardExpense) => s + e.amount,
     0,
   );
-  
+
   const isCurrentYear = selectedYear === now.getFullYear();
   let diffDays = 365;
   if (isCurrentYear) {
@@ -168,64 +201,56 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
     const diffTime = Math.abs(now.getTime() - startOfYearDate.getTime());
     diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
   } else {
-    const isLeap = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0);
+    const isLeap =
+      (selectedYear % 4 === 0 && selectedYear % 100 !== 0) ||
+      selectedYear % 400 === 0;
     diffDays = isLeap ? 366 : 365;
   }
   const yearDailyAverage = Math.round(totalYearSpent / diffDays);
 
   const yearCategoryBreakdown: Record<string, number> = {};
-  yearExpenses.forEach((e: any) => {
+  yearExpenses.forEach((e: DashboardExpense) => {
     yearCategoryBreakdown[e.category] =
       (yearCategoryBreakdown[e.category] || 0) + e.amount;
   });
 
   const yearPaymentBreakdown: Record<string, number> = {};
-  yearExpenses.forEach((e: any) => {
+  yearExpenses.forEach((e: DashboardExpense) => {
     yearPaymentBreakdown[e.paymentMode] =
       (yearPaymentBreakdown[e.paymentMode] || 0) + e.amount;
   });
 
   const topYearCategory = Object.entries(yearCategoryBreakdown).sort(
-    (a: any, b: any) => b[1] - a[1],
+    (a, b) => b[1] - a[1],
   )[0];
   const topYearPaymentMode = Object.entries(yearPaymentBreakdown).sort(
-    (a: any, b: any) => b[1] - a[1],
+    (a, b) => b[1] - a[1],
   )[0];
 
   // Monthly trend (all 12 months of the selected year)
   const monthlyTrend: { month: string; amount: number }[] = [];
   for (let m = 0; m < 12; m++) {
-    const d = new Date(selectedYear, m, 1);
-    const ms = startOfMonth(d);
-    const me = endOfMonth(d);
+    const ms = new Date(Date.UTC(selectedYear, m, 1));
+    const me = new Date(Date.UTC(selectedYear, m + 1, 0, 23, 59, 59, 999));
     const monthExpenses = yearExpenses.filter(
-      (e: any) => new Date(e.date) >= ms && new Date(e.date) <= me,
+      (e: DashboardExpense) => {
+        const utcDate = new Date(e.date);
+        return utcDate >= ms && utcDate <= me;
+      }
     );
     const total = monthExpenses.reduce(
-      (s: any, e: { amount: any }) => s + e.amount,
+      (s: number, e: DashboardExpense) => s + e.amount,
       0,
     );
     monthlyTrend.push({
-      month: d.toLocaleDateString("en-IN", { month: "short" }),
+      month: new Date(Date.UTC(selectedYear, m, 15)).toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" }),
       amount: total,
     });
   }
 
   // Year investments total
   const totalYearInvestment = yearInvestments.reduce(
-    (
-      s: any,
-      inv: {
-        mutualFundInvestment: any;
-        stockInvestment: any;
-        fdInvestment: any;
-        arbitrageInvestment: any;
-        liquidFundInvestment: any;
-        npsContribution: any;
-        epfContribution: any;
-        goldInvestment: any;
-      },
-    ) => {
+    (s: number, inv: DashboardInvestment) => {
       return (
         s +
         inv.mutualFundInvestment +
@@ -274,7 +299,7 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
       ? { mode: topYearPaymentMode[0], amount: topYearPaymentMode[1] }
       : null,
     monthlyTrend,
-    recentExpenses: recentExpenses.map((e: any) => ({
+    recentExpenses: recentExpenses.map((e: DashboardExpense) => ({
       id: e.id,
       item: e.item,
       amount: e.amount,
@@ -283,32 +308,19 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
       date: e.date.toISOString(),
     })),
     totalYearInvestment,
-    yearInvestments: yearInvestments.map(
-      (inv: {
-        month: any;
-        year: any;
-        mutualFundInvestment: any;
-        stockInvestment: any;
-        fdInvestment: any;
-        arbitrageInvestment: any;
-        liquidFundInvestment: any;
-        npsContribution: any;
-        epfContribution: any;
-        goldInvestment: any;
-      }) => ({
-        month: inv.month,
-        year: inv.year,
-        total:
-          inv.mutualFundInvestment +
-          inv.stockInvestment +
-          inv.fdInvestment +
-          inv.arbitrageInvestment +
-          inv.liquidFundInvestment +
-          inv.npsContribution +
-          inv.epfContribution +
-          inv.goldInvestment,
-      }),
-    ),
+    yearInvestments: yearInvestments.map((inv: DashboardInvestment) => ({
+      month: inv.month,
+      year: inv.year,
+      total:
+        inv.mutualFundInvestment +
+        inv.stockInvestment +
+        inv.fdInvestment +
+        inv.arbitrageInvestment +
+        inv.liquidFundInvestment +
+        inv.npsContribution +
+        inv.epfContribution +
+        inv.goldInvestment,
+    })),
     netWorth: latestNetWorth?.netWorth || 0,
     netWorthChange:
       latestNetWorth && previousNetWorth
@@ -334,7 +346,9 @@ async function getDashboardData(userId: string, selectedYear: number, selectedMo
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }> | { year?: string; month?: string };
+  searchParams:
+    | Promise<{ year?: string; month?: string }>
+    | { year?: string; month?: string };
 }) {
   const params = await searchParams;
   const session = await getServerSession(authOptions);
@@ -348,13 +362,23 @@ export default async function DashboardPage({
   });
 
   const now = new Date();
-  const defaultYear = newestExpense ? newestExpense.date.getFullYear() : now.getFullYear();
-  const defaultMonth = newestExpense ? newestExpense.date.getMonth() : now.getMonth();
+  const defaultYear = newestExpense
+    ? newestExpense.date.getFullYear()
+    : now.getFullYear();
+  const defaultMonth = newestExpense
+    ? newestExpense.date.getMonth()
+    : now.getMonth();
 
   const selectedYear = params?.year ? parseInt(params.year, 10) : defaultYear;
-  const selectedMonth = params?.month ? parseInt(params.month, 10) : defaultMonth;
+  const selectedMonth = params?.month
+    ? parseInt(params.month, 10)
+    : defaultMonth;
 
-  const data = await getDashboardData(session.user.id, selectedYear, selectedMonth);
+  const data = await getDashboardData(
+    session.user.id,
+    selectedYear,
+    selectedMonth,
+  );
 
   return <DashboardClient data={data} />;
 }

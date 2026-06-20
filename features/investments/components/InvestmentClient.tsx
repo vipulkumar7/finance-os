@@ -48,12 +48,23 @@ const INVESTMENT_TYPES = [
   { key: "liquidFundInvestment", label: "Liquid Fund", color: "#14b8a6" },
 ];
 
-function CustomTooltip({ active, payload, label }: any) {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: string | number;
+    color?: string;
+    name: string;
+    value: number;
+  }>;
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs space-y-1">
       <p className="text-[var(--text-muted)] font-medium">{label}</p>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
           <span className="text-[var(--text-secondary)]">{p.name}</span>
@@ -75,7 +86,7 @@ export default function InvestmentClient({
   const [loading, setLoading] = useState(false);
   const [investments, setInvestments] = useState(initialData);
 
-  const totalInvested = investments.reduce((sum, inv) => {
+  const totalInvested = investments.reduce((sum: number, inv) => {
     return (
       sum +
       inv.mutualFundInvestment +
@@ -93,7 +104,7 @@ export default function InvestmentClient({
   const typeBreakdown = INVESTMENT_TYPES.map((t) => ({
     ...t,
     total: investments.reduce(
-      (s, inv) => s + ((inv as any)[t.key] || 0),
+      (s: number, inv) => s + (Number(inv[t.key as keyof Investment]) || 0),
       0
     ),
   })).filter((t) => t.total > 0);
@@ -102,7 +113,7 @@ export default function InvestmentClient({
   const chartData = investments.map((inv) => ({
     month: getMonthName(inv.month),
     ...INVESTMENT_TYPES.reduce(
-      (acc, t) => ({ ...acc, [t.label]: (inv as any)[t.key] || 0 }),
+      (acc, t) => ({ ...acc, [t.label]: Number(inv[t.key as keyof Investment]) || 0 }),
       {}
     ),
   }));
@@ -200,7 +211,7 @@ export default function InvestmentClient({
                 </label>
                 <input
                   type="number"
-                  value={(form as any)[t.key]}
+                  value={form[t.key as keyof typeof form] as number}
                   onChange={(e) =>
                     setForm({ ...form, [t.key]: Number(e.target.value) })
                   }
