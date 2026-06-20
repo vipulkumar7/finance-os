@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#09090b" />
+    </radialGradient>
+    
+    <!-- Neon Green Accent Gradient -->
+    <linearGradient id="neon-glow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#34d399" />
+    </linearGradient>
+    
+    <!-- Drop Shadow for Neon Lines -->
+    <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Base Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg-glow)" stroke="#27272a" stroke-width="8" />
+
+  <!-- Inner Tech Rings -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#1f1f23" stroke-width="2" stroke-dasharray="8 12" />
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#27272a" stroke-width="1" />
+
+  <!-- Stylized upward trend line intersecting with F (Finance) -->
+  <g filter="url(#glow-effect)" stroke="url(#neon-glow)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- F Stem / Left vertical pillar -->
+    <path d="M 180,150 L 180,362" stroke-width="24" />
+    
+    <!-- F Top arm -->
+    <path d="M 180,162 L 310,162" stroke-width="22" />
+    
+    <!-- F Middle arm -->
+    <path d="M 180,246 L 270,246" stroke-width="20" />
+    
+    <!-- Trending Up Arrow wrapping through F -->
+    <path d="M 130,330 L 220,290 L 300,340 L 400,200 L 400,260 M 400,200 L 340,200" stroke-width="18" />
+  </g>
+
+  <!-- Tech Corner Accent Nodes -->
+  <circle cx="400" cy="200" r="10" fill="#34d399" />
+  <circle cx="130" cy="330" r="7" fill="#059669" />
+  <circle cx="220" cy="290" r="7" fill="#10b981" />
+  <circle cx="300" cy="340" r="7" fill="#10b981" />
+</svg>

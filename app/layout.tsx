@@ -8,9 +8,9 @@ export const metadata: Metadata = {
     "Track expenses, investments, net worth, and financial goals with a premium personal finance dashboard.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192.png",
-    shortcut: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 
