@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   formatCurrency,
@@ -20,6 +21,7 @@ interface Props {
   netWorthSnapshots: any[];
   vehicleExpenses: any[];
   year: number;
+  availableYears: number[];
 }
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -34,7 +36,16 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function AnalyticsClient({ expenses, investments, netWorthSnapshots, vehicleExpenses, year }: Props) {
+export default function AnalyticsClient({ expenses, investments, netWorthSnapshots, vehicleExpenses, year, availableYears }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleYearChange = (newYear: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("year", newYear);
+    router.push(`?${params.toString()}`);
+  };
+
   // Monthly expense trend
   const monthlyExpenses = useMemo(() => {
     const months: Record<number, number> = {};
@@ -91,9 +102,27 @@ export default function AnalyticsClient({ expenses, investments, netWorthSnapsho
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white">Analytics</h1>
-        <p className="text-sm text-[var(--text-muted)]">{year} Overview</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white">Analytics</h1>
+          <p className="text-sm text-[var(--text-muted)]">{year} Overview</p>
+        </div>
+        
+        {/* Year Selector */}
+        <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-xl">
+          <span className="text-[11px] text-[var(--text-muted)] font-medium">Year:</span>
+          <select
+            value={year}
+            onChange={(e) => handleYearChange(e.target.value)}
+            className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer pr-1"
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y} className="bg-zinc-950">
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {hasData ? (

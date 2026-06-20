@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Wallet,
@@ -71,6 +72,9 @@ interface DashboardData {
     icon: string;
     progress: number;
   }[];
+  selectedYear: number;
+  selectedMonth: number;
+  availableYears: number[];
 }
 
 const container = {
@@ -97,6 +101,8 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function DashboardClient({ data }: { data: DashboardData }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [timeframe, setTimeframe] = useState<"month" | "year">("month");
 
   const activeBreakdown = timeframe === "month" ? data.categoryBreakdown : data.yearCategoryBreakdown;
@@ -105,6 +111,18 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const activeDailyAverage = timeframe === "month" ? data.dailyAverage : data.yearDailyAverage;
   const activeTopCategory = timeframe === "month" ? data.topCategory : data.topYearCategory;
   const activeTopPaymentMode = timeframe === "month" ? data.topPaymentMode : data.topYearPaymentMode;
+
+  const handleYearChange = (newYear: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("year", newYear);
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", newMonth);
+    router.push(`?${params.toString()}`);
+  };
 
   const categoryData = Object.entries(activeBreakdown)
     .map(([key, value]) => ({
@@ -124,6 +142,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
   const hasData = activeTotal > 0 || data.recentExpenses.length > 0;
 
+  const currentMonthName = getMonthName(data.selectedMonth + 1);
+
   return (
     <motion.div
       variants={container}
@@ -132,34 +152,72 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       className="p-4 md:p-8 space-y-6"
     >
       {/* Timeframe Toggle Header */}
-      <motion.div variants={item} className="flex items-center justify-between">
+      <motion.div variants={item} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white">Dashboard</h2>
           <p className="text-xs text-[var(--text-muted)]">Personal financial insights</p>
         </div>
-        <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-xl">
-          <button
-            onClick={() => setTimeframe("month")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              timeframe === "month"
-                ? "bg-[var(--bg-elevated)] text-white shadow-sm"
-                : "text-[var(--text-secondary)] hover:text-white"
-            }`}
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setTimeframe("year")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              timeframe === "year"
-                ? "bg-[var(--bg-elevated)] text-white shadow-sm"
-                : "text-[var(--text-secondary)] hover:text-white"
-            }`}
-          >
-            This Year
-          </button>
+        <div className="flex items-center gap-3">
+          {/* Year selector */}
+          <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-xl">
+            <span className="text-[11px] text-[var(--text-muted)] font-medium">Year:</span>
+            <select
+              value={data.selectedYear}
+              onChange={(e) => handleYearChange(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer pr-1"
+            >
+              {data.availableYears.map((y) => (
+                <option key={y} value={y} className="bg-zinc-950">
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Month selector */}
+          {timeframe === "month" && (
+            <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-xl">
+              <span className="text-[11px] text-[var(--text-muted)] font-medium">Month:</span>
+              <select
+                value={data.selectedMonth}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer pr-1"
+              >
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <option key={i} value={i} className="bg-zinc-950">
+                    {getMonthName(i + 1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Timeframe switch */}
+          <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-xl">
+            <button
+              onClick={() => setTimeframe("month")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                timeframe === "month"
+                  ? "bg-[var(--bg-elevated)] text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-white"
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => setTimeframe("year")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                timeframe === "year"
+                  ? "bg-[var(--bg-elevated)] text-white shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-white"
+              }`}
+            >
+              Year
+            </button>
+          </div>
         </div>
       </motion.div>
+
       {/* ===== TOP METRIC CARDS ===== */}
       <motion.div
         variants={item}
@@ -171,8 +229,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
               <Wallet className="w-4 h-4 text-emerald-400" />
             </div>
-            <span className="text-xs text-[var(--text-muted)] font-medium">
-              Total Spent {timeframe === "month" ? "This Month" : "This Year"}
+            <span className="text-[10px] sm:text-xs text-[var(--text-muted)] font-medium truncate">
+              Spent ({timeframe === "month" ? `${currentMonthName} ${data.selectedYear}` : data.selectedYear})
             </span>
           </div>
           <p className="text-xl md:text-2xl font-bold text-white">
@@ -203,8 +261,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             <div className="w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center">
               <Calendar className="w-4 h-4 text-blue-400" />
             </div>
-            <span className="text-xs text-[var(--text-muted)] font-medium">
-              Daily Average {timeframe === "month" ? "This Month" : "This Year"}
+            <span className="text-[10px] sm:text-xs text-[var(--text-muted)] font-medium truncate">
+              Daily Avg ({timeframe === "month" ? `${currentMonthName} ${data.selectedYear}` : data.selectedYear})
             </span>
           </div>
           <p className="text-xl md:text-2xl font-bold text-white">
@@ -223,11 +281,11 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             <div className="w-8 h-8 rounded-xl bg-purple-500/15 flex items-center justify-center">
               <Tag className="w-4 h-4 text-purple-400" />
             </div>
-            <span className="text-xs text-[var(--text-muted)] font-medium">
+            <span className="text-xs text-[var(--text-muted)] font-medium truncate">
               Top Category
             </span>
           </div>
-          <p className="text-lg md:text-xl font-bold text-white">
+          <p className="text-lg md:text-xl font-bold text-white truncate">
             {activeTopCategory
               ? CATEGORY_CONFIG[activeTopCategory.category]?.label || "—"
               : "—"}
@@ -242,7 +300,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       (activeTopCategory.amount / activeTotal) * 100
                     )
                   : 0}
-                % of total
+                %
               </span>
             </p>
           )}
@@ -254,7 +312,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
               <CreditCard className="w-4 h-4 text-amber-400" />
             </div>
-            <span className="text-xs text-[var(--text-muted)] font-medium">
+            <span className="text-xs text-[var(--text-muted)] font-medium truncate">
               Top Payment Mode
             </span>
           </div>
@@ -273,7 +331,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       (activeTopPaymentMode.amount / activeTotal) * 100
                     )
                   : 0}
-                % of total
+                %
               </span>
             </p>
           )}

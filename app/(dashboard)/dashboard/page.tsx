@@ -12,16 +12,43 @@ import {
   endOfDay,
 } from "date-fns";
 
-async function getDashboardData(userId: string) {
+async function getDashboardData(userId: string, selectedYear: number, selectedMonth: number) {
   const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const yearStart = startOfYear(now);
-  const yearEnd = endOfYear(now);
-  const lastMonthStart = startOfMonth(subMonths(now, 1));
-  const lastMonthEnd = endOfMonth(subMonths(now, 1));
+  
+  // selectedMonth is 0-indexed (0 = Jan, 11 = Dec)
+  const targetDate = new Date(selectedYear, selectedMonth, 15);
+  
+  const monthStart = startOfMonth(targetDate);
+  const monthEnd = endOfMonth(targetDate);
+  const yearStart = startOfYear(targetDate);
+  const yearEnd = endOfYear(targetDate);
+  const lastMonthStart = startOfMonth(subMonths(targetDate, 1));
+  const lastMonthEnd = endOfMonth(subMonths(targetDate, 1));
+  
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth();
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
+
+  // Find dynamic list of years with data
+  const oldestExpense = await prisma.expense.findFirst({
+    where: { userId },
+    orderBy: { date: "asc" },
+    select: { date: true },
+  });
+  const newestExpense = await prisma.expense.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+    select: { date: true },
+  });
+  
+  const currentYear = now.getFullYear();
+  const startYear = oldestExpense ? oldestExpense.date.getFullYear() : currentYear - 1;
+  const endYear = newestExpense ? newestExpense.date.getFullYear() : currentYear;
+  
+  const availableYears = [];
+  for (let y = startYear; y <= Math.max(endYear, currentYear); y++) {
+    availableYears.push(y);
+  }
 
   // Fetch all dashboard data concurrently
   const [
@@ -42,30 +69,41 @@ async function getDashboardData(userId: string) {
     prisma.expense.findMany({
       where: { userId, date: { gte: lastMonthStart, lte: lastMonthEnd } },
     }),
-    prisma.expense.findMany({
-      where: { userId, date: { gte: todayStart, lte: todayEnd } },
-    }),
+    isCurrentMonth
+      ? prisma.expense.findMany({ where: { userId, date: { gte: todayStart, lte: todayEnd } } })
+      : Promise.resolve([]),
     prisma.expense.findMany({
       where: { userId, date: { gte: yearStart, lte: yearEnd } },
       orderBy: { date: "asc" },
     }),
     prisma.expense.findMany({
-      where: { userId },
+      where: { userId, date: { gte: yearStart, lte: yearEnd } },
       orderBy: { date: "desc" },
       take: 5,
     }),
     prisma.investmentEntry.findMany({
-      where: { userId, year: now.getFullYear() },
+      where: { userId, year: selectedYear },
       orderBy: [{ month: "asc" }],
     }),
     prisma.netWorthSnapshot.findFirst({
-      where: { userId },
+      where: {
+        userId,
+        OR: [
+          { year: { lt: selectedYear } },
+          { year: selectedYear, month: { lte: selectedMonth + 1 } }
+        ]
+      },
       orderBy: [{ year: "desc" }, { month: "desc" }],
     }),
     prisma.netWorthSnapshot.findFirst({
-      where: { userId },
+      where: {
+        userId,
+        OR: [
+          { year: { lt: selectedYear } },
+          { year: selectedYear, month: { lte: selectedMonth } }
+        ]
+      },
       orderBy: [{ year: "desc" }, { month: "desc" }],
-      skip: 1,
     }),
     prisma.goal.findMany({
       where: { userId },
@@ -86,7 +124,10 @@ async function getDashboardData(userId: string) {
     (s: any, e: { amount: any }) => s + e.amount,
     0,
   );
-  const daysInMonth = now.getDate();
+  
+  const daysInMonth = isCurrentMonth
+    ? now.getDate()
+    : new Date(selectedYear, selectedMonth + 1, 0).getDate();
   const dailyAverage =
     daysInMonth > 0 ? Math.round(totalMonthSpent / daysInMonth) : 0;
 
@@ -115,14 +156,21 @@ async function getDashboardData(userId: string) {
   )[0];
 
   // Yearly calculations
-  // Yearly calculations
   const totalYearSpent = yearExpenses.reduce(
     (s: any, e: { amount: any }) => s + e.amount,
     0,
   );
-  const startOfYearDate = new Date(now.getFullYear(), 0, 1);
-  const diffTime = Math.abs(now.getTime() - startOfYearDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+  
+  const isCurrentYear = selectedYear === now.getFullYear();
+  let diffDays = 365;
+  if (isCurrentYear) {
+    const startOfYearDate = new Date(selectedYear, 0, 1);
+    const diffTime = Math.abs(now.getTime() - startOfYearDate.getTime());
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+  } else {
+    const isLeap = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0);
+    diffDays = isLeap ? 366 : 365;
+  }
   const yearDailyAverage = Math.round(totalYearSpent / diffDays);
 
   const yearCategoryBreakdown: Record<string, number> = {};
@@ -144,10 +192,10 @@ async function getDashboardData(userId: string) {
     (a: any, b: any) => b[1] - a[1],
   )[0];
 
-  // Monthly trend (last 6 months)
+  // Monthly trend (all 12 months of the selected year)
   const monthlyTrend: { month: string; amount: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = subMonths(now, i);
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(selectedYear, m, 1);
     const ms = startOfMonth(d);
     const me = endOfMonth(d);
     const monthExpenses = yearExpenses.filter(
@@ -158,7 +206,7 @@ async function getDashboardData(userId: string) {
       0,
     );
     monthlyTrend.push({
-      month: d.toLocaleDateString("en-IN", { month: "short", year: "numeric" }),
+      month: d.toLocaleDateString("en-IN", { month: "short" }),
       amount: total,
     });
   }
@@ -277,14 +325,36 @@ async function getDashboardData(userId: string) {
           ? Math.round((g.currentAmount / g.targetAmount) * 100)
           : 0,
     })),
+    selectedYear,
+    selectedMonth,
+    availableYears,
   };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string; month?: string }> | { year?: string; month?: string };
+}) {
+  const params = await searchParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const data = await getDashboardData(session.user.id);
+  // Query latest expense to find the default year/month if not provided
+  const newestExpense = await prisma.expense.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { date: "desc" },
+    select: { date: true },
+  });
+
+  const now = new Date();
+  const defaultYear = newestExpense ? newestExpense.date.getFullYear() : now.getFullYear();
+  const defaultMonth = newestExpense ? newestExpense.date.getMonth() : now.getMonth();
+
+  const selectedYear = params?.year ? parseInt(params.year, 10) : defaultYear;
+  const selectedMonth = params?.month ? parseInt(params.month, 10) : defaultMonth;
+
+  const data = await getDashboardData(session.user.id, selectedYear, selectedMonth);
 
   return <DashboardClient data={data} />;
 }

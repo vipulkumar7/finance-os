@@ -1,20 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  Plus,
-  Filter,
-  ChevronDown,
-  X,
-} from "lucide-react";
+import { Search, Plus, Filter, ChevronDown, X } from "lucide-react";
 import Link from "next/link";
 import {
   formatCurrency,
   formatDate,
   CATEGORY_CONFIG,
   PAYMENT_MODE_CONFIG,
+  getMonthName,
 } from "@/lib/utils";
 
 interface Expense {
@@ -31,24 +27,44 @@ interface Expense {
 
 export default function ExpenseListClient({
   initialExpenses,
+  selectedYear,
+  selectedMonth,
+  availableYears,
 }: {
   initialExpenses: Expense[];
+  selectedYear: number;
+  selectedMonth: number;
+  availableYears: number[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleYearChange = (newYear: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("year", newYear);
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", newMonth);
+    router.push(`?${params.toString()}`);
+  };
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [expenses] = useState(initialExpenses);
 
   const filtered = useMemo(() => {
-    return expenses.filter((e) => {
+    return initialExpenses.filter((e) => {
       if (search && !e.item.toLowerCase().includes(search.toLowerCase()))
         return false;
       if (categoryFilter && e.category !== categoryFilter) return false;
       if (paymentFilter && e.paymentMode !== paymentFilter) return false;
       return true;
     });
-  }, [expenses, search, categoryFilter, paymentFilter]);
+  }, [initialExpenses, search, categoryFilter, paymentFilter]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -66,17 +82,56 @@ export default function ExpenseListClient({
   return (
     <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">Expenses</h1>
           <p className="text-sm text-[var(--text-muted)]">
             {filtered.length} transactions · {formatCurrency(totalFiltered)}
           </p>
         </div>
-        <Link href="/expenses/add" className="btn-primary">
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Expense</span>
-        </Link>
+
+        <div className="flex items-center gap-3">
+          {/* Year selector */}
+          <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 rounded-xl h-10">
+            <span className="text-xs text-[var(--text-muted)] font-medium">
+              Year:
+            </span>
+            <select
+              value={selectedYear}
+              onChange={(e) => handleYearChange(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer py-1 pr-1"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y} className="bg-zinc-950 px-2">
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Month selector */}
+          <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 rounded-xl h-10">
+            <span className="text-xs text-[var(--text-muted)] font-medium">
+              Month:
+            </span>
+            <select
+              value={selectedMonth}
+              onChange={(e) => handleMonthChange(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer py-1 pr-1"
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i} value={i} className="bg-zinc-950">
+                  {getMonthName(i + 1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Link href="/expenses/add" className="btn-primary shrink-0 h-10">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Expense</span>
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filters */}
