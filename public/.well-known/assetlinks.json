@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.vipul_finance.twa",
+        "sha256_cert_fingerprints": ["C3:6D:04:AA:8D:9A:52:88:E1:2C:F8:09:10:75:32:8C:F0:C8:74:DF:B5:AC:AF:08:B9:23:0E:9B:B3:EB:56:DD"]
+      }
+    }]
