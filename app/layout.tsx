@@ -1,5 +1,6 @@
 import "./globals.css";
 import AuthProvider from "@/providers/SessionProvider";
+import PWARegister from "@/providers/PWARegister";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-[100dvh]" style={{ background: "#0a0a0f" }}>
         <AuthProvider>
+          <PWARegister />
           <div className="min-h-[100dvh] flex flex-col">{children}</div>
         </AuthProvider>
       </body>
