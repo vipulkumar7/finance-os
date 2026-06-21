@@ -3,7 +3,10 @@
   "name": "FinanceOS",
   "short_name": "FinanceOS",
   "description": "Premium personal financial management system to track expenses, investments, net worth, and goals.",
-  "categories": ["finance", "productivity"],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "prefer_related_applications": false,
   "related_applications": [],
   "start_url": "/dashboard",
@@ -11,7 +14,12 @@
   "lang": "en-IN",
   "dir": "ltr",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "tabbed", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "tabbed",
+    "standalone",
+    "minimal-ui"
+  ],
   "launch_handler": {
     "client_mode": "focus-existing"
   },
@@ -44,21 +52,66 @@
       "short_name": "Add Expense",
       "description": "Log a new transaction",
       "url": "/expenses/add",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "View Expenses",
       "short_name": "Expenses",
       "description": "View transaction list",
       "url": "/expenses",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Analytics",
       "short_name": "Analytics",
       "description": "Financial analytics dashboard",
       "url": "/analytics",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot1.png",
+      "sizes": "1024x682",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FinanceOS Dashboard - Desktop View"
+    },
+    {
+      "src": "/screenshots/screenshot2.png",
+      "sizes": "1024x682",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FinanceOS Dashboard - Desktop View"
+    },
+    {
+      "src": "/screenshots/screenshot3.png",
+      "sizes": "1024x633",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FinanceOS Dashboard - Desktop View"
+    },
+    {
+      "src": "/screenshots/screenshot4.png",
+      "sizes": "1024x674",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FinanceOS Dashboard - Desktop View"
     }
   ]
 }
