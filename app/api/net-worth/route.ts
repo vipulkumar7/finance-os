@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
       validated.liquidFundValue +
       validated.arbitrageFundValue +
       validated.savingsAccountValue +
-      validated.goldValue;
+      validated.goldValue +
+      validated.cryptoValue +
+      validated.lentAmount;
 
     const totalLiabilities =
       validated.personalLoan + validated.homeLoan + validated.otherLoan;

@@ -76,6 +76,8 @@ export const netWorthSchema = z.object({
   arbitrageFundValue: z.number().min(0).default(0),
   savingsAccountValue: z.number().min(0).default(0),
   goldValue: z.number().min(0).default(0),
+  cryptoValue: z.number().min(0).default(0),
+  lentAmount: z.number().min(0).default(0),
   personalLoan: z.number().min(0).default(0),
   homeLoan: z.number().min(0).default(0),
   otherLoan: z.number().min(0).default(0),

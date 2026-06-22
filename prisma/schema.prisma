@@ -183,6 +183,8 @@ model NetWorthSnapshot {
   arbitrageFundValue  Float @default(0)
   savingsAccountValue Float @default(0)
   goldValue           Float @default(0)
+  cryptoValue         Float @default(0)
+  lentAmount          Float @default(0)
 
   // Liabilities
   personalLoan Float @default(0)
