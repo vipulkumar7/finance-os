@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Plus, TrendingUp, TrendingDown, PiggyBank, Edit2, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, TrendingUp, TrendingDown, PiggyBank, Edit2, Trash2, LineChart, Coins, Wallet, Landmark, Shield, Gem } from "lucide-react";
 import {
   formatCurrency,
   formatCompactCurrency,
@@ -17,9 +17,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
 interface Snapshot {
@@ -65,12 +62,17 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const latest = snapshots[snapshots.length - 1];
   const previous = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
 
   const momChange = latest && previous
     ? getPercentageChange(latest.netWorth, previous.netWorth)
+    : 0;
+
+  const momAbsoluteChange = latest && previous
+    ? latest.netWorth - previous.netWorth
     : 0;
 
   // Chart data
@@ -81,16 +83,94 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
     liabilities: s.totalLiabilities,
   }));
 
-  // Asset allocation
-  const assetAllocation = latest
-    ? Object.entries(ASSET_COLORS)
-        .map(([key, config]) => ({
-          name: config.label,
-          value: (latest as any)[key] || 0,
-          color: config.color,
-        }))
-        .filter((a) => a.value > 0)
-    : [];
+  // INDmoney Category Math
+  const equitiesValue = (latest?.stocksValue || 0) + (latest?.mutualFundsValue || 0) + (latest?.arbitrageFundValue || 0) + (latest?.liquidFundValue || 0);
+  const bankValue = latest?.savingsAccountValue || 0;
+  const retirementValue = (latest?.epfValue || 0) + (latest?.npsValue || 0);
+  const fixedIncomeValue = latest?.fdValue || 0;
+  const alternateValue = (latest?.cryptoValue || 0) + (latest?.goldValue || 0) + (latest?.lentAmount || 0);
+
+  const totalAssets = latest?.totalAssets || 0;
+  const liabilitiesValue = latest?.totalLiabilities || 0;
+
+  const getAssetPercent = (val: number) => totalAssets > 0 ? ((val / totalAssets) * 100).toFixed(1) : "0";
+  const getDebtPercent = (val: number) => liabilitiesValue > 0 ? ((val / liabilitiesValue) * 100).toFixed(1) : "0";
+
+  const assetRatio = totalAssets + liabilitiesValue > 0
+    ? (totalAssets / (totalAssets + liabilitiesValue)) * 100
+    : 100;
+  const liabilityRatio = 100 - assetRatio;
+
+  const assetCategories = [
+    {
+      id: "equities",
+      label: "Equities & Mutual Funds",
+      value: equitiesValue,
+      color: "#10b981",
+      bgGradient: "from-emerald-500/10 to-teal-500/5",
+      icon: LineChart,
+      percent: getAssetPercent(equitiesValue),
+      details: [
+        { label: "Mutual Funds", val: latest?.mutualFundsValue || 0 },
+        { label: "Stocks", val: latest?.stocksValue || 0 },
+        { label: "Arbitrage Funds", val: latest?.arbitrageFundValue || 0 },
+        { label: "Liquid Funds", val: latest?.liquidFundValue || 0 },
+      ].filter(d => d.val > 0)
+    },
+    {
+      id: "bank",
+      label: "Bank & Cash",
+      value: bankValue,
+      color: "#3b82f6",
+      bgGradient: "from-blue-500/10 to-indigo-500/5",
+      icon: Wallet,
+      percent: getAssetPercent(bankValue),
+      details: []
+    },
+    {
+      id: "retirement",
+      label: "Retirement & EPF",
+      value: retirementValue,
+      color: "#06b6d4",
+      bgGradient: "from-cyan-500/10 to-sky-500/5",
+      icon: Shield,
+      percent: getAssetPercent(retirementValue),
+      details: [
+        { label: "EPF", val: latest?.epfValue || 0 },
+        { label: "NPS", val: latest?.npsValue || 0 },
+      ].filter(d => d.val > 0)
+    },
+    {
+      id: "fixed",
+      label: "Fixed Income",
+      value: fixedIncomeValue,
+      color: "#f59e0b",
+      bgGradient: "from-amber-500/10 to-orange-500/5",
+      icon: Landmark,
+      percent: getAssetPercent(fixedIncomeValue),
+      details: []
+    },
+    {
+      id: "alternate",
+      label: "Alternate Assets",
+      value: alternateValue,
+      color: "#a855f7",
+      bgGradient: "from-purple-500/10 to-pink-500/5",
+      icon: Coins,
+      percent: getAssetPercent(alternateValue),
+      details: [
+        { label: "Crypto", val: latest?.cryptoValue || 0 },
+        { label: "Gold", val: latest?.goldValue || 0 },
+        { label: "Lent to Others", val: latest?.lentAmount || 0 },
+      ].filter(d => d.val > 0)
+    }
+  ].filter(c => c.value > 0);
+
+  const debtItems = [
+    { label: "Personal Loan", val: latest?.personalLoan || 0, percent: getDebtPercent(latest?.personalLoan || 0) },
+    { label: "Home Loan", val: latest?.homeLoan || 0, percent: getDebtPercent(latest?.homeLoan || 0) },
+    { label: "Other Loans", val: latest?.otherLoan || 0, percent: getDebtPercent(latest?.otherLoan || 0) },
+  ].filter(d => d.val > 0);
 
   const [form, setForm] = useState({
     month: new Date().getMonth() + 1,
@@ -177,24 +257,54 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white">Net Worth</h1>
-          <p className="text-sm text-[var(--text-muted)]">Monthly snapshots</p>
+          <p className="text-sm text-[var(--text-muted)]">Premium portfolio tracking</p>
         </div>
-        <button
-          onClick={() => {
-            if (showForm) {
-              handleCancel();
-            } else {
-              setShowForm(true);
-            }
-          }}
-          className="btn-primary"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{editingId ? "Editing" : "Add Snapshot"}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {latest && !showForm && (
+            <button
+              onClick={() => handleEdit(latest)}
+              className="btn-primary"
+            >
+              <Edit2 className="w-4 h-4" />
+              <span>Update Current Month ({getMonthName(latest.month)})</span>
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (showForm) {
+                handleCancel();
+              } else {
+                if (latest) {
+                  setForm((prev) => ({
+                    ...prev,
+                    mutualFundsValue: latest.mutualFundsValue,
+                    stocksValue: latest.stocksValue,
+                    epfValue: latest.epfValue,
+                    npsValue: latest.npsValue,
+                    fdValue: latest.fdValue,
+                    liquidFundValue: latest.liquidFundValue,
+                    arbitrageFundValue: latest.arbitrageFundValue,
+                    savingsAccountValue: latest.savingsAccountValue,
+                    goldValue: latest.goldValue,
+                    cryptoValue: latest.cryptoValue || 0,
+                    lentAmount: latest.lentAmount || 0,
+                    personalLoan: latest.personalLoan,
+                    homeLoan: latest.homeLoan,
+                    otherLoan: latest.otherLoan,
+                  }));
+                }
+                setShowForm(true);
+              }
+            }}
+            className={latest && !showForm ? "btn-secondary" : "btn-primary"}
+          >
+            {showForm ? null : <Plus className="w-4 h-4" />}
+            <span>{showForm ? "Cancel" : "Add New Month"}</span>
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -204,9 +314,11 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
           onSubmit={handleSubmit}
           className="glass-card-static p-6 space-y-4"
         >
-          <h3 className="text-sm font-semibold text-white">
-            {editingId ? `Edit Snapshot for ${getMonthName(form.month)} ${form.year}` : "New Snapshot"}
-          </h3>
+          <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-3">
+            <h3 className="text-sm font-semibold text-white">
+              {editingId ? `Edit Snapshot for ${getMonthName(form.month)} ${form.year}` : "New Snapshot"}
+            </h3>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-[var(--text-muted)] mb-1 block">Month</label>
@@ -239,10 +351,11 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
                 <label className="text-xs text-[var(--text-muted)] mb-1 block">{config.label}</label>
                 <input
                   type="number"
-                  value={(form as any)[key]}
-                  onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
+                  value={(form as any)[key] === 0 ? "" : (form as any)[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value === "" ? 0 : Number(e.target.value) })}
                   className="form-input"
                   min="0"
+                  placeholder="0"
                 />
               </div>
             ))}
@@ -258,10 +371,11 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
                 <label className="text-xs text-[var(--text-muted)] mb-1 block">{l.label}</label>
                 <input
                   type="number"
-                  value={(form as any)[l.key]}
-                  onChange={(e) => setForm({ ...form, [l.key]: Number(e.target.value) })}
+                  value={(form as any)[l.key] === 0 ? "" : (form as any)[l.key]}
+                  onChange={(e) => setForm({ ...form, [l.key]: e.target.value === "" ? 0 : Number(e.target.value) })}
                   className="form-input"
                   min="0"
+                  placeholder="0"
                 />
               </div>
             ))}
@@ -275,86 +389,171 @@ export default function NetWorthClient({ snapshots }: { snapshots: Snapshot[] })
         </motion.form>
       )}
 
-      {/* Net Worth Card */}
+      {/* INDmoney Style Hero Wealth Display */}
       {latest && (
-        <div className="glass-card-static p-6 metric-accent-amber">
-          <p className="text-xs text-[var(--text-muted)] font-medium mb-1">Current Net Worth</p>
-          <p className="text-3xl font-bold text-white">{formatCurrency(latest.netWorth)}</p>
-          {momChange !== 0 && (
-            <div className="flex items-center gap-1 mt-2">
-              {momChange > 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-red-400" />}
-              <span className={`text-xs ${momChange > 0 ? "text-emerald-400" : "text-red-400"}`}>{momChange > 0 ? "+" : ""}{momChange}% month-over-month</span>
+        <div className="glass-card-static p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">Total Net Worth</p>
+              <h2 className="text-4xl font-extrabold text-white mt-1">{formatCurrency(latest.netWorth)}</h2>
+              {previous && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  {momAbsoluteChange >= 0 ? (
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-400" />
+                  )}
+                  <span className={`text-sm font-semibold ${momAbsoluteChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {momAbsoluteChange >= 0 ? "+" : ""}{formatCurrency(momAbsoluteChange)} ({momChange >= 0 ? "+" : ""}{momChange}%)
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)]">this month</span>
+                </div>
+              )}
             </div>
-          )}
-          <div className="flex gap-6 mt-3">
-            <div><p className="text-xs text-[var(--text-muted)]">Assets</p><p className="text-sm font-semibold text-emerald-400">{formatCompactCurrency(latest.totalAssets)}</p></div>
-            <div><p className="text-xs text-[var(--text-muted)]">Liabilities</p><p className="text-sm font-semibold text-red-400">{formatCompactCurrency(latest.totalLiabilities)}</p></div>
+            
+            <div className="flex gap-8 border-l border-zinc-800 pl-0 sm:pl-8">
+              <div>
+                <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">Assets</p>
+                <p className="text-lg font-bold text-emerald-400 mt-0.5">{formatCurrency(latest.totalAssets)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">Liabilities</p>
+                <p className="text-lg font-bold text-red-400 mt-0.5">{formatCurrency(latest.totalLiabilities)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Asset vs Debt Ratio bar */}
+          <div className="space-y-2">
+            <div className="w-full h-2.5 rounded-full overflow-hidden flex bg-zinc-800">
+              <div style={{ width: `${assetRatio}%` }} className="h-full bg-emerald-500 transition-all duration-500" />
+              <div style={{ width: `${liabilityRatio}%` }} className="h-full bg-rose-500 transition-all duration-500" />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+              <span>Assets: <strong className="text-emerald-400">{assetRatio.toFixed(0)}%</strong></span>
+              <span>Debt: <strong className="text-rose-400">{liabilityRatio.toFixed(0)}%</strong></span>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Growth Chart */}
-        {chartData.length > 1 && (
-          <div className="glass-card-static p-5">
-            <h3 className="text-sm font-semibold text-white mb-4">Net Worth Growth</h3>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 11 }} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
-                  <Tooltip content={({ active, payload, label }) => active && payload?.[0] ? (
-                    <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
-                      <p className="text-[var(--text-muted)]">{label}</p>
-                      <p className="text-white font-semibold">{formatCurrency(payload[0].value as number)}</p>
-                    </div>
-                  ) : null} />
-                  <Area type="monotone" dataKey="netWorth" stroke="#f59e0b" strokeWidth={2} fill="url(#nwGrad)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+      {/* Main Breakdown Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left/Middle Column: Asset Classes & Debt list */}
+        <div className="lg:col-span-2 space-y-6">
+          {latest && (
+            <div className="glass-card-static p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white tracking-wide">Assets Allocation</h3>
+              <div className="divide-y divide-zinc-800/60">
+                {assetCategories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isExpanded = expandedCategory === cat.id;
+                  const hasDetails = cat.details.length > 0;
 
-        {/* Asset Allocation */}
-        {assetAllocation.length > 0 && (
-          <div className="glass-card-static p-5">
-            <h3 className="text-sm font-semibold text-white mb-4">Asset Allocation</h3>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={assetAllocation} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="value" stroke="none">
-                    {assetAllocation.map((a, i) => <Cell key={i} fill={a.color} />)}
-                  </Pie>
-                  <Tooltip content={({ active, payload }) => active && payload?.[0] ? (
-                    <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
-                      <p className="text-[var(--text-muted)]">{payload[0].name}</p>
-                      <p className="text-white font-semibold">{formatCurrency(payload[0].value as number)}</p>
+                  return (
+                    <div key={cat.id} className="py-3 first:pt-0 last:pb-0">
+                      <div
+                        onClick={() => hasDetails && setExpandedCategory(isExpanded ? null : cat.id)}
+                        className={`flex items-center justify-between cursor-pointer ${hasDetails ? "hover:opacity-90" : "cursor-default"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center`} style={{ color: cat.color }}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white">{cat.label}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] text-[var(--text-muted)]">{cat.percent}% allocation</span>
+                              {hasDetails && (
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-[var(--text-secondary)] font-medium">
+                                  {isExpanded ? "hide details" : "show details"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm font-bold text-white">{formatCurrency(cat.value)}</p>
+                      </div>
+
+                      {/* Expandable Asset Details */}
+                      <AnimatePresence>
+                        {isExpanded && hasDetails && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden bg-zinc-950/40 rounded-xl mt-2 px-3 py-2 space-y-1.5 border border-zinc-900/60"
+                          >
+                            {cat.details.map((sub, sIdx) => (
+                              <div key={sIdx} className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-[var(--text-secondary)]">{sub.label}</span>
+                                <span className="text-white font-semibold">{formatCurrency(sub.val)}</span>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  ) : null} />
-                </PieChart>
-              </ResponsiveContainer>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-2 mt-2">
-              {assetAllocation.map((a) => (
-                <div key={a.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: a.color }} />
-                    <span className="text-[var(--text-secondary)]">{a.name}</span>
+          )}
+
+          {/* Liabilities Cards */}
+          {latest && debtItems.length > 0 && (
+            <div className="glass-card-static p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white tracking-wide">Liabilities & Outstanding Loans</h3>
+              <div className="divide-y divide-zinc-800/60">
+                {debtItems.map((debt, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+                        <Shield className="w-4 h-4 rotate-180" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">{debt.label}</p>
+                        <p className="text-[10px] text-rose-400 mt-0.5">{debt.percent}% of total debt</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-white">{formatCurrency(debt.val)}</p>
                   </div>
-                  <span className="text-white font-medium">{formatCompactCurrency(a.value)}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Right Column: Growth chart */}
+        <div className="lg:col-span-1 space-y-6">
+          {chartData.length > 1 && (
+            <div className="glass-card-static p-5">
+              <h3 className="text-sm font-semibold text-white mb-4">Net Worth Growth</h3>
+              <div className="h-[230px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
+                    <Tooltip content={({ active, payload, label }) => active && payload?.[0] ? (
+                      <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
+                        <p className="text-[var(--text-muted)]">{label}</p>
+                        <p className="text-white font-semibold">{formatCurrency(payload[0].value as number)}</p>
+                      </div>
+                    ) : null} />
+                    <Area type="monotone" dataKey="netWorth" stroke="#10b981" strokeWidth={2} fill="url(#nwGrad)" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Snapshot History Table */}
