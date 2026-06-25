@@ -38,14 +38,14 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-[240px] h-screen bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] fixed left-0 top-0 z-40">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 h-[var(--header-height)] border-b border-[var(--border-primary)]">
+      <Link href="/dashboard" className="flex items-center gap-3 px-5 h-[var(--header-height)] border-b border-[var(--border-primary)] hover:opacity-90 transition-opacity">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
           <Wallet className="w-4 h-4 text-white" />
         </div>
         <span className="text-base font-bold text-white tracking-tight">
           FinanceOS
         </span>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">

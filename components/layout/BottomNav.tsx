@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Receipt,
-  TrendingUp,
+  PiggyBank,
   BarChart3,
   User,
 } from "lucide-react";
@@ -13,7 +13,7 @@ import { useState, useCallback, useEffect } from "react";
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Home", path: "/dashboard" },
   { icon: Receipt, label: "Expenses", path: "/expenses" },
-  { icon: TrendingUp, label: "Invest", path: "/investments" },
+  { icon: PiggyBank, label: "Net Worth", path: "/net-worth" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: User, label: "Profile", path: "/profile" },
 ];

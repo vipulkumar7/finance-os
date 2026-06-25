@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { Search } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { getGreeting } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import SearchModal from "@/features/search/components/SearchModal";
@@ -57,20 +58,22 @@ export default function Header() {
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Avatar */}
-          {session?.user?.image ? (
-            <Image
-              src={session.user.image}
-              alt="Profile"
-              width={36}
-              height={36}
-              className="rounded-full border-2 border-[var(--border-primary)]"
-            />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold">
-              {firstName.charAt(0)}
-            </div>
-          )}
+          {/* Avatar Link */}
+          <Link href="/profile" className="hover:opacity-90 transition-opacity">
+            {session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt="Profile"
+                width={36}
+                height={36}
+                className="rounded-full border-2 border-[var(--border-primary)]"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold">
+                {firstName.charAt(0)}
+              </div>
+            )}
+          </Link>
         </div>
       </header>
 
