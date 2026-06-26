@@ -178,50 +178,65 @@ export default function CalendarClient({
 
       {/* Day Breakdown Modal */}
       <AnimatePresence>
-        {selected && selectedData && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-4 md:p-5"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Breakdown for</p>
-                <h3 className="text-sm font-bold text-white mt-0.5">{selected}</h3>
-              </div>
-              <div className="flex items-center justify-between sm:justify-end gap-6">
+        {selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            {/* Backdrop click to close */}
+            <div className="absolute inset-0" onClick={() => setSelected(null)} />
+            
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-md border border-zinc-900 bg-zinc-950/95 backdrop-blur-xl rounded-2xl p-5 md:p-6 shadow-2xl relative z-10 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.03),transparent_50%)] pointer-events-none" />
+
+              <div className="flex flex-row items-center justify-between gap-3 mb-5 pb-4 border-b border-zinc-900 relative z-10">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Total Spent</p>
-                  <p className="text-sm font-bold text-emerald-400 mt-0.5">
-                    {formatCurrency(selectedData.total)}
-                  </p>
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 font-bold">Breakdown for</p>
+                  <h3 className="text-sm font-bold text-white mt-0.5">{selected}</h3>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {selectedData.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-zinc-900/60 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{CATEGORY_CONFIG[item.category]?.icon || "📌"}</span>
-                    <div>
-                      <p className="text-xs font-semibold text-white">{item.item}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                        {CATEGORY_CONFIG[item.category]?.label || item.category}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 font-bold">Total Spent</p>
+                    <p className="text-sm font-bold text-emerald-400 mt-0.5">
+                      {formatCurrency(selectedData?.total || 0)}
+                    </p>
                   </div>
-                  <span className="text-xs font-bold text-white">{formatCurrency(item.amount)}</span>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[var(--text-muted)] hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </motion.div>
+              </div>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto relative z-10 pr-1">
+                {!selectedData || selectedData.items.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-xs text-[var(--text-muted)] font-medium">No expenses recorded for this date.</p>
+                  </div>
+                ) : (
+                  selectedData.items.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-2.5 border-b border-zinc-900/60 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{CATEGORY_CONFIG[item.category]?.icon || "📌"}</span>
+                        <div>
+                          <p className="text-xs font-semibold text-white">{item.item}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] font-medium">
+                            {CATEGORY_CONFIG[item.category]?.label || item.category}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-white">{formatCurrency(item.amount)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
