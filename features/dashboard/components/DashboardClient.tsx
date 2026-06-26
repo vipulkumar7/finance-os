@@ -728,7 +728,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               </div>
 
               {/* Legend */}
-              <div className="space-y-2 mt-4 max-h-[120px] overflow-y-auto pr-1">
+              <div className="space-y-2 mt-4 max-h-[260px] overflow-y-auto pr-1">
                 {paymentData.map((pm) => (
                   <div
                     key={pm.name}
