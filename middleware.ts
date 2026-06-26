@@ -19,7 +19,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/expenses/:path*",
-    "/investments/:path*",
+    "/budget/:path*",
     "/net-worth/:path*",
     "/goals/:path*",
     "/vehicle/:path*",
@@ -29,7 +29,7 @@ export const config = {
     "/calendar/:path*",
     "/search/:path*",
     "/api/expenses/:path*",
-    "/api/investments/:path*",
+    "/api/budget/:path*",
     "/api/net-worth/:path*",
     "/api/goals/:path*",
     "/api/vehicle/:path*",

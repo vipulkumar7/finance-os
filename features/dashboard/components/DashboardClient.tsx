@@ -889,7 +889,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               {formatCompactCurrency(data.totalYearInvestment)}
             </p>
             <Link
-              href="/investments"
+              href="/budget"
               className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 mt-3"
             >
               View details <ArrowRight className="w-3 h-3" />

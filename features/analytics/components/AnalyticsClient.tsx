@@ -9,13 +9,10 @@ import {
   getMonthName,
   CATEGORY_CONFIG,
   PAYMENT_MODE_CONFIG,
-  VEHICLE_TYPE_CONFIG,
 } from "@/lib/utils";
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -27,19 +24,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import {
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  CreditCard,
-  Wallet,
-  Percent,
-  ArrowUpRight,
-  BarChart3,
-  LineChart as LucideLineChart,
-  Coins,
-  Shield,
-} from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
 interface AnalyticsInvestment {
   month: number;
@@ -78,6 +63,16 @@ interface SerializedVehicleExpense {
   notes: string | null;
 }
 
+interface BudgetAllocation {
+  id: string;
+  name: string;
+  amount: number;
+  type: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Props {
   expenses: SerializedExpense[];
   investments: AnalyticsInvestment[];
@@ -85,6 +80,7 @@ interface Props {
   vehicleExpenses: SerializedVehicleExpense[];
   year: number;
   availableYears: number[];
+  initialBudget: BudgetAllocation[];
 }
 
 interface TooltipProps {
@@ -122,15 +118,14 @@ export default function AnalyticsClient({
   expenses,
   investments,
   netWorthSnapshots,
-  vehicleExpenses,
   year,
   availableYears,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "expenses" | "investments"
-  >("expenses");
+  const [activeTab, setActiveTab] = useState<"overview" | "expenses">(
+    "expenses",
+  );
 
   const handleYearChange = (newYear: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -206,21 +201,6 @@ export default function AnalyticsClient({
       netWorth: s.netWorth,
     }));
   }, [netWorthSnapshots]);
-
-  // Vehicle breakdown
-  const vehicleData = useMemo(() => {
-    const types: Record<string, number> = {};
-    vehicleExpenses.forEach((e) => {
-      types[e.type] = (types[e.type] || 0) + e.amount;
-    });
-    return Object.entries(types)
-      .map(([k, v]) => ({
-        name: VEHICLE_TYPE_CONFIG[k]?.label || k,
-        value: v,
-        color: VEHICLE_TYPE_CONFIG[k]?.color || "#6b7280",
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [vehicleExpenses]);
 
   // Savings rate
   const savingsRate = useMemo(() => {
@@ -321,32 +301,6 @@ export default function AnalyticsClient({
 
       {hasData ? (
         <div className="space-y-6">
-          {/* INDmoney Style Navigation Tabs */}
-          <div className="flex bg-zinc-900/80 border border-zinc-800/80 p-0.5 rounded-xl max-w-md">
-            {[
-              { id: "expenses", label: "Expenses", icon: CreditCard },
-              { id: "overview", label: "Overview", icon: BarChart3 },
-              { id: "investments", label: "Investments", icon: Wallet },
-            ].map((tab) => {
-              const TabIcon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-zinc-800 text-emerald-400 shadow-sm"
-                      : "text-[var(--text-secondary)] hover:text-white"
-                  }`}
-                >
-                  <TabIcon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Tab View Container */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -776,166 +730,6 @@ export default function AnalyticsClient({
                             ))}
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* TAB 3: INVESTMENTS */}
-              {activeTab === "investments" && (
-                <>
-                  {/* Investments Stats Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="glass-card-static p-5 metric-accent-purple">
-                      <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                        Total Invested
-                      </p>
-                      <h3 className="text-2xl font-extrabold text-white mt-1">
-                        {formatCurrency(metrics.totalInvested)}
-                      </h3>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                        Growth contributions
-                      </p>
-                    </div>
-                    <div className="glass-card-static p-5">
-                      <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                        Monthly Contribution
-                      </p>
-                      <h3 className="text-2xl font-extrabold text-white mt-1">
-                        {formatCurrency(metrics.totalInvested / 12)}
-                      </h3>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                        Average contribution monthly
-                      </p>
-                    </div>
-                    <div className="glass-card-static p-5 metric-accent-amber">
-                      <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                        Vehicle Spending
-                      </p>
-                      <h3 className="text-2xl font-bold text-white mt-1.5 truncate">
-                        {formatCurrency(
-                          vehicleExpenses.reduce((sum, e) => sum + e.amount, 0),
-                        )}
-                      </h3>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        Asset maintenance & fuel
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Investments Charts Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Monthly Investment Bar Chart */}
-                    <div className="glass-card-static p-5">
-                      <h3 className="text-sm font-semibold text-white mb-4">
-                        Monthly Investment Trend
-                      </h3>
-                      <div className="h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={monthlyInvestments}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              stroke="rgba(255,255,255,0.03)"
-                              vertical={false}
-                            />
-                            <XAxis
-                              dataKey="month"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fill: "#6b7280", fontSize: 10 }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fill: "#6b7280", fontSize: 10 }}
-                              tickFormatter={(v) =>
-                                `₹${(v / 1000).toFixed(0)}K`
-                              }
-                            />
-                            <Tooltip content={<ChartTooltip />} />
-                            <Bar
-                              dataKey="amount"
-                              name="Investment"
-                              fill="#8b5cf6"
-                              radius={[4, 4, 0, 0]}
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    {/* Vehicle Breakdown Pie */}
-                    {vehicleData.length > 0 ? (
-                      <div className="glass-card-static p-5">
-                        <h3 className="text-sm font-semibold text-white mb-4">
-                          Vehicle Expenses Breakdown
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                          <div className="h-[180px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={vehicleData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={50}
-                                  outerRadius={75}
-                                  paddingAngle={2}
-                                  dataKey="value"
-                                  stroke="none"
-                                >
-                                  {vehicleData.map((e, i) => (
-                                    <Cell key={i} fill={e.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip
-                                  content={({ active, payload }) =>
-                                    active && payload?.[0] ? (
-                                      <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
-                                        <p className="text-[var(--text-muted)]">
-                                          {payload[0].name}
-                                        </p>
-                                        <p className="text-white font-semibold">
-                                          {formatCurrency(
-                                            payload[0].value as number,
-                                          )}
-                                        </p>
-                                      </div>
-                                    ) : null
-                                  }
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="space-y-1.5">
-                            {vehicleData.map((v) => (
-                              <div
-                                key={v.name}
-                                className="flex items-center justify-between text-xs"
-                              >
-                                <div className="flex items-center gap-1.5">
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ background: v.color }}
-                                  />
-                                  <span className="text-[var(--text-secondary)]">
-                                    {v.name}
-                                  </span>
-                                </div>
-                                <span className="text-white font-semibold">
-                                  {formatCurrency(v.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="glass-card-static p-5 flex items-center justify-center text-center">
-                        <p className="text-xs text-[var(--text-muted)]">
-                          No vehicle expenses logged for {year}
-                        </p>
                       </div>
                     )}
                   </div>

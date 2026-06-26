@@ -49,18 +49,24 @@ export default async function AnalyticsPage({
     orderBy: { date: "desc" },
     select: { date: true },
   });
-  
+
   const now = new Date();
   const currentYear = now.getFullYear();
-  const startYear = oldestExpense ? oldestExpense.date.getFullYear() : currentYear - 1;
-  const endYear = newestExpense ? newestExpense.date.getFullYear() : currentYear;
-  
+  const startYear = oldestExpense
+    ? oldestExpense.date.getFullYear()
+    : currentYear - 1;
+  const endYear = newestExpense
+    ? newestExpense.date.getFullYear()
+    : currentYear;
+
   const availableYears = [];
   for (let y = startYear; y <= Math.max(endYear, currentYear); y++) {
     availableYears.push(y);
   }
 
-  const defaultYear = newestExpense ? newestExpense.date.getFullYear() : currentYear;
+  const defaultYear = newestExpense
+    ? newestExpense.date.getFullYear()
+    : currentYear;
   const selectedYear = params?.year ? parseInt(params.year, 10) : defaultYear;
 
   const yearStart = new Date(Date.UTC(selectedYear, 0, 1));
@@ -92,6 +98,38 @@ export default async function AnalyticsPage({
       }) as Promise<DBVehicleExpense[]>,
     ]);
 
+  let budgetAllocations = await prisma.budgetAllocation.findMany({
+    where: { userId: session.user.id },
+    orderBy: [{ type: "asc" }, { name: "asc" }],
+  });
+
+  if (!budgetAllocations || budgetAllocations.length === 0) {
+    const DEFAULT_BUDGET = [
+      { name: "SBI Large Cap", amount: 10000, type: "Mutual Funds" },
+      { name: "PGIM Mid Cap", amount: 20000, type: "Mutual Funds" },
+      { name: "Quant Multi Cap", amount: 15000, type: "Mutual Funds" },
+      { name: "Bandhan Small Cap", amount: 5000, type: "Mutual Funds" },
+      { name: "US stock and ETF", amount: 10000, type: "Stocks" },
+      { name: "HDFC gold ETF", amount: 5000, type: "Gold" },
+      { name: "Kotaj Arbitrage Fund", amount: 3500, type: "Arbitrage" },
+      { name: "EMI", amount: 12000, type: "EMI" },
+      { name: "Expense", amount: 35000, type: "Expense" },
+    ];
+
+    await prisma.budgetAllocation.createMany({
+      data: DEFAULT_BUDGET.map((item) => ({
+        ...item,
+        userId: session.user.id,
+      })),
+      skipDuplicates: true,
+    });
+
+    budgetAllocations = await prisma.budgetAllocation.findMany({
+      where: { userId: session.user.id },
+      orderBy: [{ type: "asc" }, { name: "asc" }],
+    });
+  }
+
   return (
     <AnalyticsClient
       expenses={expenses.map((e: DBExpense) => ({
@@ -106,6 +144,11 @@ export default async function AnalyticsPage({
       }))}
       year={selectedYear}
       availableYears={availableYears}
+      initialBudget={budgetAllocations?.map((b: any) => ({
+        ...b,
+        createdAt: b.createdAt.toISOString(),
+        updatedAt: b.updatedAt.toISOString(),
+      }))}
     />
   );
 }

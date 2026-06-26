@@ -24,11 +24,12 @@ const NAV_ITEMS = [
   { icon: Receipt, label: "Expenses", path: "/expenses" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
   { icon: CalendarDays, label: "Calendar", path: "/calendar" },
-  { icon: TrendingUp, label: "Investments", path: "/investments" },
+  { icon: TrendingUp, label: "Budget", path: "/budget" },
   { icon: PiggyBank, label: "Net Worth", path: "/net-worth" },
   { icon: Target, label: "Goals", path: "/goals" },
   { icon: Car, label: "Vehicles", path: "/vehicle" },
   { icon: Lightbulb, label: "Insights", path: "/insights" },
+  { icon: Award, label: "Rewards", path: "/rewards" },
   { icon: Settings, label: "Settings", path: "/profile" },
 ];
 
