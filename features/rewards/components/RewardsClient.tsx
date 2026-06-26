@@ -14,6 +14,14 @@ interface CardReward {
   updatedAt: string;
 }
 
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 interface Props {
   initialRewards: CardReward[];
 }
@@ -208,7 +216,7 @@ export default function RewardsClient({ initialRewards }: Props) {
                           <input
                             type="number"
                             value={editPoints}
-                            onChange={(e) => setEditPoints(e.target.value)}
+                            onChange={(e) => setEditPoints(e.target.value.replace(/^0+(?=\d)/, ''))}
                             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
                           />
                         </div>
@@ -217,7 +225,7 @@ export default function RewardsClient({ initialRewards }: Props) {
                           <input
                             type="number"
                             value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
+                            onChange={(e) => setEditValue(e.target.value.replace(/^0+(?=\d)/, ''))}
                             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
                           />
                         </div>
@@ -267,7 +275,7 @@ export default function RewardsClient({ initialRewards }: Props) {
                           {reward.notes || "No notes added yet."}
                         </p>
                         <p className="text-[9px] text-zinc-600 font-semibold uppercase">
-                          Last Updated: {new Date(reward.updatedAt).toLocaleDateString()}
+                          Last Updated: {formatDate(reward.updatedAt)}
                         </p>
                       </div>
 

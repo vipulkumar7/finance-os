@@ -9,12 +9,14 @@ import {
   PiggyBank,
   Edit2,
   Trash2,
-  LineChart,
+  LineChart as LucideLineChart,
   Coins,
   Wallet,
   Landmark,
   Shield,
-  Gem,
+  X,
+  Check,
+  ArrowRight,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -136,7 +138,7 @@ export default function NetWorthClient({
       value: equitiesValue,
       color: "#10b981",
       bgGradient: "from-emerald-500/10 to-teal-500/5",
-      icon: LineChart,
+      icon: LucideLineChart,
       percent: getAssetPercent(equitiesValue),
       details: [
         { label: "Mutual Funds", val: latest?.mutualFundsValue || 0 },
@@ -316,144 +318,166 @@ export default function NetWorthClient({
   const historySnapshots = [...snapshots].reverse();
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Title & Top Action bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
         <div>
-          <h1 className="text-xl font-bold text-white">Net Worth</h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            Premium portfolio tracking
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <span className="w-2.5 h-6 rounded bg-gradient-to-b from-emerald-400 to-teal-500 inline-block" />
+            Net Worth
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-1">
+            Premium portfolio tracking, asset distribution & outstanding debt log
           </p>
         </div>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-black py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-950/20 active:scale-95 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Snapshot</span>
+          </button>
+        )}
       </div>
 
-      {showForm && (
-        <motion.form
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onSubmit={handleSubmit}
-          className="glass-card-static p-6 space-y-4"
-        >
-          <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-3">
-            <h3 className="text-sm font-semibold text-white">
-              {editingId
-                ? `Edit Snapshot for ${getMonthName(form.month)} ${form.year}`
-                : "New Snapshot"}
-            </h3>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                Month
-              </label>
-              <select
-                value={form.month}
-                onChange={(e) =>
-                  setForm({ ...form, month: Number(e.target.value) })
-                }
-                className="form-input"
-                disabled={!!editingId}
+      {/* Snapshot Entry Modal Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            onSubmit={handleSubmit}
+            className="border border-zinc-900 bg-zinc-950/80 rounded-2xl p-6 space-y-4 overflow-hidden shadow-2xl relative"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+              <h3 className="text-sm font-bold text-white tracking-tight">
+                {editingId
+                  ? `Edit Snapshot for ${getMonthName(form.month)} ${form.year}`
+                  : "Create Net Worth Snapshot"}
+              </h3>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
               >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {getMonthName(i + 1)}
-                  </option>
-                ))}
-              </select>
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                Year
-              </label>
-              <input
-                type="number"
-                value={form.year}
-                onChange={(e) =>
-                  setForm({ ...form, year: Number(e.target.value) })
-                }
-                className="form-input"
-                disabled={!!editingId}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-emerald-400 font-medium">Assets</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Object.entries(ASSET_COLORS).map(([key, config]) => (
-              <div key={key}>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                  {config.label}
-                </label>
-                <input
-                  type="number"
-                  value={(form as any)[key] === 0 ? "" : (form as any)[key]}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      [key]: e.target.value === "" ? 0 : Number(e.target.value),
-                    })
-                  }
-                  className="form-input"
-                  min="0"
-                  placeholder="0"
-                />
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-red-400 font-medium">Liabilities</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              { key: "personalLoan", label: "Personal Loan" },
-              { key: "homeLoan", label: "Home Loan" },
-              { key: "otherLoan", label: "Other Loan" },
-            ].map((l) => (
-              <div key={l.key}>
-                <label className="text-xs text-[var(--text-muted)] mb-1 block">
-                  {l.label}
-                </label>
-                <input
-                  type="number"
-                  value={(form as any)[l.key] === 0 ? "" : (form as any)[l.key]}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      [l.key]:
-                        e.target.value === "" ? 0 : Number(e.target.value),
-                    })
-                  }
-                  className="form-input"
-                  min="0"
-                  placeholder="0"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary flex-1"
-            >
-              {loading ? "Saving..." : "Save Snapshot"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-          </div>
-        </motion.form>
-      )}
 
-      {/* INDmoney Style Hero Wealth Display */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase font-bold text-zinc-400">Month</label>
+                <select
+                  value={form.month}
+                  onChange={(e) =>
+                    setForm({ ...form, month: Number(e.target.value) })
+                  }
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
+                  disabled={!!editingId}
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {getMonthName(i + 1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold text-zinc-400">Year</label>
+                <input
+                  type="number"
+                  value={form.year}
+                  onChange={(e) =>
+                    setForm({ ...form, year: Number(e.target.value) })
+                  }
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
+                  disabled={!!editingId}
+                />
+              </div>
+            </div>
+
+            <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider mt-4">Assets Values (INR)</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {Object.entries(ASSET_COLORS).map(([key, config]) => (
+                <div key={key}>
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">{config.label}</label>
+                  <input
+                    type="number"
+                    value={(form as any)[key] === 0 ? "" : (form as any)[key]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [key]: e.target.value === "" ? 0 : Number(e.target.value.replace(/^0+(?=\d)/, "")),
+                      })
+                    }
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mt-4">Liabilities (INR)</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                { key: "personalLoan", label: "Personal Loan" },
+                { key: "homeLoan", label: "Home Loan" },
+                { key: "otherLoan", label: "Other Loan" },
+              ].map((l) => (
+                <div key={l.key}>
+                  <label className="text-[10px] uppercase font-bold text-zinc-400">{l.label}</label>
+                  <input
+                    type="number"
+                    value={(form as any)[l.key] === 0 ? "" : (form as any)[l.key]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [l.key]:
+                          e.target.value === "" ? 0 : Number(e.target.value.replace(/^0+(?=\d)/, "")),
+                      })
+                    }
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-emerald-500 mt-1"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-800 text-black py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>{loading ? "Saving..." : "Save Snapshot"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bg-zinc-900 hover:bg-zinc-850 text-zinc-300 py-2 px-4 rounded-xl text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Hero Wealth Display */}
       {latest && (
-        <div className="glass-card-static p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-6 space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/[0.01] rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
-              <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                 Total Net Worth
               </p>
-              <h2 className="text-4xl font-extrabold text-white mt-1">
+              <h2 className="text-3xl md:text-4xl font-black text-white mt-1 tracking-tight">
                 {formatCurrency(latest.netWorth)}
               </h2>
               {previous && (
@@ -464,34 +488,34 @@ export default function NetWorthClient({
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
                   <span
-                    className={`text-sm font-semibold ${momAbsoluteChange >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                    className={`text-xs font-bold ${momAbsoluteChange >= 0 ? "text-emerald-400" : "text-red-400"}`}
                   >
                     {momAbsoluteChange >= 0 ? "+" : ""}
                     {formatCurrency(momAbsoluteChange)} (
                     {momChange >= 0 ? "+" : ""}
                     {momChange}%)
                   </span>
-                  <span className="text-xs text-[var(--text-muted)]">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
                     this month
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-8 border-l border-zinc-800 pl-0 sm:pl-8">
+            <div className="flex gap-8 border-l border-zinc-900 pl-0 sm:pl-8">
               <div>
-                <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                   Assets
                 </p>
-                <p className="text-lg font-bold text-emerald-400 mt-0.5">
+                <p className="text-lg font-black text-emerald-400 mt-1">
                   {formatCurrency(latest.totalAssets)}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                   Liabilities
                 </p>
-                <p className="text-lg font-bold text-red-400 mt-0.5">
+                <p className="text-lg font-black text-red-400 mt-1">
                   {formatCurrency(latest.totalLiabilities)}
                 </p>
               </div>
@@ -500,17 +524,17 @@ export default function NetWorthClient({
 
           {/* Asset vs Debt Ratio bar */}
           <div className="space-y-2">
-            <div className="w-full h-2.5 rounded-full overflow-hidden flex bg-zinc-800">
+            <div className="w-full h-2 rounded-full overflow-hidden flex bg-zinc-900 border border-zinc-850">
               <div
                 style={{ width: `${assetRatio}%` }}
-                className="h-full bg-emerald-500 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500"
               />
               <div
                 style={{ width: `${liabilityRatio}%` }}
-                className="h-full bg-rose-500 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-rose-500 to-red-600 transition-all duration-500"
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+            <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
               <span>
                 Assets:{" "}
                 <strong className="text-emerald-400">
@@ -530,52 +554,56 @@ export default function NetWorthClient({
 
       {/* Main Breakdown Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left/Middle Column: Asset Classes & Debt list */}
+        {/* Left Column: Asset Classes & Debt list */}
         <div className="lg:col-span-2 space-y-6">
           {latest && (
-            <div className="glass-card-static p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-white tracking-wide">
+            <div className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 space-y-4">
+              <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">
                 Assets Allocation
               </h3>
-              <div className="divide-y divide-zinc-800/60">
+              <div className="divide-y divide-zinc-900/60">
                 {assetCategories.map((cat) => {
                   const Icon = cat.icon;
                   const isExpanded = expandedCategory === cat.id;
                   const hasDetails = cat.details.length > 0;
 
                   return (
-                    <div key={cat.id} className="py-3 first:pt-0 last:pb-0">
+                    <div key={cat.id} className="py-4 first:pt-0 last:pb-0">
                       <div
                         onClick={() =>
                           hasDetails &&
                           setExpandedCategory(isExpanded ? null : cat.id)
                         }
-                        className={`flex items-center justify-between cursor-pointer ${hasDetails ? "hover:opacity-90" : "cursor-default"}`}
+                        className={`flex items-center justify-between cursor-pointer group ${hasDetails ? "hover:opacity-90" : "cursor-default"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center`}
-                            style={{ color: cat.color }}
+                            className="w-10 h-10 rounded-xl bg-zinc-900 border flex items-center justify-center group-hover:scale-105 transition-transform"
+                            style={{
+                              borderColor: `${cat.color}15`,
+                              color: cat.color,
+                              background: `${cat.color}08`,
+                            }}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-white">
+                            <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
                               {cat.label}
                             </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[10px] text-[var(--text-muted)]">
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
                                 {cat.percent}% allocation
                               </span>
                               {hasDetails && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-[var(--text-secondary)] font-medium">
-                                  {isExpanded ? "hide details" : "show details"}
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold uppercase tracking-wider">
+                                  {isExpanded ? "Hide" : "Show details"}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <p className="text-sm font-bold text-white">
+                        <p className="text-xs font-black text-white">
                           {formatCurrency(cat.value)}
                         </p>
                       </div>
@@ -587,17 +615,17 @@ export default function NetWorthClient({
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden bg-zinc-950/40 rounded-xl mt-2 px-3 py-2 space-y-1.5 border border-zinc-900/60"
+                            className="overflow-hidden bg-zinc-950/40 rounded-xl mt-3 px-3.5 py-2.5 space-y-2 border border-zinc-900"
                           >
                             {cat.details.map((sub, sIdx) => (
                               <div
                                 key={sIdx}
-                                className="flex justify-between items-center text-[11px] py-0.5"
+                                className="flex justify-between items-center text-xs py-0.5"
                               >
-                                <span className="text-[var(--text-secondary)]">
+                                <span className="text-zinc-400 font-medium">
                                   {sub.label}
                                 </span>
-                                <span className="text-white font-semibold">
+                                <span className="text-white font-bold">
                                   {formatCurrency(sub.val)}
                                 </span>
                               </div>
@@ -614,30 +642,30 @@ export default function NetWorthClient({
 
           {/* Liabilities Cards */}
           {latest && debtItems.length > 0 && (
-            <div className="glass-card-static p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-white tracking-wide">
+            <div className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 space-y-4">
+              <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">
                 Liabilities & Outstanding Loans
               </h3>
-              <div className="divide-y divide-zinc-800/60">
+              <div className="divide-y divide-zinc-900/60">
                 {debtItems.map((debt, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                    className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
                         <Shield className="w-4 h-4 rotate-180" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-white">
                           {debt.label}
                         </p>
-                        <p className="text-[10px] text-rose-400 mt-0.5">
+                        <p className="text-[9px] text-rose-400 font-bold uppercase tracking-wider mt-1">
                           {debt.percent}% of total debt
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm font-bold text-white">
+                    <p className="text-xs font-black text-white">
                       {formatCurrency(debt.val)}
                     </p>
                   </div>
@@ -650,19 +678,20 @@ export default function NetWorthClient({
         {/* Right Column: Growth chart */}
         <div className="lg:col-span-1 space-y-6">
           {chartData.length > 1 && (
-            <div className="glass-card-static p-5">
-              <h3 className="text-sm font-semibold text-white mb-4">
+            <div className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-500/[0.01] rounded-full blur-3xl pointer-events-none" />
+              <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 mb-4">
                 Net Worth Growth
               </h3>
-              <div className="h-[230px]">
+              <div className="h-[230px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 5, left: 10, bottom: -5 }}>
                     <defs>
                       <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
                           stopColor="#10b981"
-                          stopOpacity={0.3}
+                          stopOpacity={0.2}
                         />
                         <stop
                           offset="95%"
@@ -672,28 +701,29 @@ export default function NetWorthClient({
                       </linearGradient>
                     </defs>
                     <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(255,255,255,0.04)"
+                      strokeDasharray="4 4"
+                      stroke="rgba(255,255,255,0.02)"
                       vertical={false}
                     />
                     <XAxis
                       dataKey="label"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6b7280", fontSize: 10 }}
+                      tick={{ fill: "#6b7280", fontSize: 9, fontWeight: 600 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#6b7280", fontSize: 10 }}
+                      width={45}
+                      tick={{ fill: "#6b7280", fontSize: 9, fontWeight: 600 }}
                       tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`}
                     />
                     <Tooltip
                       content={({ active, payload, label }) =>
                         active && payload?.[0] ? (
-                          <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
-                            <p className="text-[var(--text-muted)]">{label}</p>
-                            <p className="text-white font-semibold">
+                          <div className="rounded-xl border border-zinc-800 bg-zinc-950/95 px-3 py-2 shadow-2xl backdrop-blur-md text-xs">
+                            <p className="text-[var(--text-muted)] font-medium mb-0.5">{label}</p>
+                            <p className="text-white font-extrabold text-sm">
                               {formatCurrency(payload[0].value as number)}
                             </p>
                           </div>
@@ -718,74 +748,74 @@ export default function NetWorthClient({
 
       {/* Snapshot History Table */}
       {snapshots.length > 0 && (
-        <div className="glass-card-static p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-white">Snapshot History</h3>
+        <div className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 space-y-4">
+          <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">Snapshot History</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[var(--border-primary)] text-[var(--text-muted)]">
-                  <th className="py-3 px-2 font-medium">Month</th>
-                  <th className="py-3 px-2 font-medium text-right">
+                <tr className="border-b border-zinc-900 text-zinc-500 font-bold uppercase tracking-wider">
+                  <th className="py-3.5 px-3 font-bold text-[10px]">Month</th>
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right">
                     Net Worth
                   </th>
-                  <th className="py-3 px-2 font-medium text-right">Assets</th>
-                  <th className="py-3 px-2 font-medium text-right">
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right">Assets</th>
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right">
                     Liabilities
                   </th>
-                  <th className="py-3 px-2 font-medium text-right hidden sm:table-cell">
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right hidden sm:table-cell">
                     Bank Account
                   </th>
-                  <th className="py-3 px-2 font-medium text-right hidden sm:table-cell">
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right hidden sm:table-cell">
                     Crypto
                   </th>
-                  <th className="py-3 px-2 font-medium text-right hidden sm:table-cell">
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-right hidden sm:table-cell">
                     Lent Out
                   </th>
-                  <th className="py-3 px-2 font-medium text-center">Actions</th>
+                  <th className="py-3.5 px-3 font-bold text-[10px] text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-primary)]">
+              <tbody className="divide-y divide-zinc-900">
                 {historySnapshots.map((s) => (
                   <tr
                     key={s.id}
-                    className="hover:bg-[var(--bg-elevated)]/30 transition-colors"
+                    className="hover:bg-zinc-900/10 transition-colors group"
                   >
-                    <td className="py-3 px-2 text-white font-medium">
+                    <td className="py-3.5 px-3 text-white font-bold">
                       {getMonthName(s.month)} {s.year}
                     </td>
-                    <td className="py-3 px-2 text-right text-amber-400 font-semibold">
+                    <td className="py-3.5 px-3 text-right text-amber-400 font-black">
                       {formatCompactCurrency(s.netWorth)}
                     </td>
-                    <td className="py-3 px-2 text-right text-emerald-400">
+                    <td className="py-3.5 px-3 text-right text-emerald-400 font-bold">
                       {formatCompactCurrency(s.totalAssets)}
                     </td>
-                    <td className="py-3 px-2 text-right text-red-400">
+                    <td className="py-3.5 px-3 text-right text-red-400 font-bold">
                       {formatCompactCurrency(s.totalLiabilities)}
                     </td>
-                    <td className="py-3 px-2 text-right text-[var(--text-secondary)] hidden sm:table-cell">
+                    <td className="py-3.5 px-3 text-right text-zinc-400 font-medium hidden sm:table-cell">
                       {formatCompactCurrency(s.savingsAccountValue)}
                     </td>
-                    <td className="py-3 px-2 text-right text-[var(--text-secondary)] hidden sm:table-cell">
+                    <td className="py-3.5 px-3 text-right text-zinc-400 font-medium hidden sm:table-cell">
                       {formatCompactCurrency(s.cryptoValue || 0)}
                     </td>
-                    <td className="py-3 px-2 text-right text-[var(--text-secondary)] hidden sm:table-cell">
+                    <td className="py-3.5 px-3 text-right text-zinc-400 font-medium hidden sm:table-cell">
                       {formatCompactCurrency(s.lentAmount || 0)}
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="py-3.5 px-3">
                       <div className="flex items-center justify-center gap-3">
                         <button
                           onClick={() => handleEdit(s)}
-                          className="p-1 text-[var(--text-muted)] hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-850 text-zinc-400 hover:text-white transition-colors"
                           title="Edit"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => handleDelete(s.id)}
-                          className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                          className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-850 hover:bg-red-950 text-zinc-400 hover:text-red-400 transition-colors"
                           title="Delete"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </td>
@@ -798,15 +828,19 @@ export default function NetWorthClient({
       )}
 
       {snapshots.length === 0 && !showForm && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--bg-elevated)] flex items-center justify-center mb-4">
-            <PiggyBank className="w-7 h-7 text-[var(--text-muted)]" />
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-900 bg-zinc-950/20 rounded-3xl">
+          <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-850 flex items-center justify-center mb-4">
+            <PiggyBank className="w-7 h-7 text-zinc-600" />
           </div>
-          <p className="text-sm text-[var(--text-muted)] mb-4">
-            No net worth snapshots yet
+          <p className="text-sm font-bold text-zinc-400 mb-4">
+            No net worth snapshots logged yet
           </p>
-          <button onClick={() => setShowForm(true)} className="btn-primary">
-            <Plus className="w-4 h-4" /> Add first snapshot
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-black py-2 px-5 rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95 animate-pulse"
+          >
+            <Plus className="w-4 h-4 mr-1.5 inline" />
+            <span>Add First Snapshot</span>
           </button>
         </div>
       )}

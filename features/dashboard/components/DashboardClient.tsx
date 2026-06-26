@@ -11,6 +11,10 @@ import {
   CreditCard,
   Tag,
   Calendar,
+  ChevronDown,
+  Sparkles,
+  Award,
+  Target,
 } from "lucide-react";
 import {
   formatCurrency,
@@ -19,6 +23,7 @@ import {
   PAYMENT_MODE_CONFIG,
   formatDateShort,
   getMonthName,
+  getGreeting,
 } from "@/lib/utils";
 import {
   AreaChart,
@@ -31,7 +36,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
   ReferenceLine,
 } from "recharts";
 import Link from "next/link";
@@ -82,21 +86,21 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.06 },
+    transition: { staggerChildren: 0.05 },
   },
 };
 
 const item = {
   hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as any } },
 };
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-card-elevated px-3 py-2 !rounded-lg text-xs">
-      <p className="text-[var(--text-muted)] mb-1">{label}</p>
-      <p className="text-white font-semibold">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-950/95 px-3 py-2 shadow-2xl backdrop-blur-md text-xs">
+      <p className="text-[var(--text-muted)] font-medium mb-0.5">{label}</p>
+      <p className="text-white font-extrabold text-sm">
         {formatCurrency(payload[0].value)}
       </p>
     </div>
@@ -150,7 +154,6 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     .sort((a, b) => b.value - a.value);
 
   const hasData = activeTotal > 0 || data.recentExpenses.length > 0;
-
   const currentMonthName = getMonthName(data.selectedMonth + 1);
 
   const activeTrendMonths = data.monthlyTrend.filter((m) => m.amount > 0);
@@ -163,32 +166,30 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="p-4 md:p-8 space-y-6"
+      className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto"
     >
       {/* Timeframe Toggle Header */}
       <motion.div
         variants={item}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5"
       >
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="w-2.5 h-6 rounded-full bg-emerald-500 inline-block" />
-            <span>Dashboard</span>
+          <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+            <span className="w-2.5 h-6 rounded bg-gradient-to-b from-emerald-400 to-teal-500 inline-block" />
+            <span>{getGreeting()}, Welcome back</span>
           </h2>
-          <p className="text-xs text-[var(--text-muted)] pl-4">
-            Personal financial insights & wealth tracking
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-1">
+            Personal financial insights & wealth tracking overview
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Year selector */}
-          <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-900 px-3 py-1.5 rounded-xl shadow-inner">
-            <span className="text-[11px] text-[var(--text-muted)] font-medium">
-              Year:
-            </span>
+          <div className="relative flex items-center bg-zinc-950 border border-zinc-900 px-3.5 py-1.5 rounded-xl transition-colors hover:border-zinc-800">
+            <Calendar className="w-3.5 h-3.5 text-zinc-500 mr-2" />
             <select
               value={data.selectedYear}
               onChange={(e) => handleYearChange(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer pr-1"
+              className="bg-transparent text-xs font-bold text-white outline-none border-none cursor-pointer pr-4 appearance-none relative z-10"
             >
               {data.availableYears.map((y) => (
                 <option key={y} value={y} className="bg-zinc-950">
@@ -196,18 +197,17 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 </option>
               ))}
             </select>
+            <ChevronDown className="w-3 h-3 text-zinc-500 absolute right-3 pointer-events-none" />
           </div>
 
           {/* Month selector */}
           {timeframe === "month" && (
-            <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-900 px-3 py-1.5 rounded-xl shadow-inner">
-              <span className="text-[11px] text-[var(--text-muted)] font-medium">
-                Month:
-              </span>
+            <div className="relative flex items-center bg-zinc-950 border border-zinc-900 px-3.5 py-1.5 rounded-xl transition-colors hover:border-zinc-800">
+              <Calendar className="w-3.5 h-3.5 text-zinc-500 mr-2" />
               <select
                 value={data.selectedMonth}
                 onChange={(e) => handleMonthChange(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-white outline-none border-none cursor-pointer pr-1"
+                className="bg-transparent text-xs font-bold text-white outline-none border-none cursor-pointer pr-4 appearance-none relative z-10"
               >
                 {Array.from({ length: 12 }).map((_, i) => (
                   <option key={i} value={i} className="bg-zinc-950">
@@ -215,6 +215,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-3 h-3 text-zinc-500 absolute right-3 pointer-events-none" />
             </div>
           )}
 
@@ -222,7 +223,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           <div className="flex items-center bg-zinc-950 border border-zinc-900 p-1 rounded-xl shadow-inner">
             <button
               onClick={() => setTimeframe("month")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
                 timeframe === "month"
                   ? "bg-zinc-800 text-white shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-white"
@@ -232,7 +233,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </button>
             <button
               onClick={() => setTimeframe("year")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
                 timeframe === "year"
                   ? "bg-zinc-800 text-white shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-white"
@@ -243,6 +244,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           </div>
         </div>
       </motion.div>
+
       {/* ===== TOP METRIC CARDS ===== */}
       <motion.div
         variants={item}
@@ -250,39 +252,35 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       >
         {/* Total Spent */}
         <motion.div
-          whileHover={{ y: -4, borderColor: "rgba(16, 185, 129, 0.3)" }}
-          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/80 p-5 transition-colors group"
+          whileHover={{ y: -3, borderColor: "rgba(16, 185, 129, 0.25)" }}
+          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/60 p-5 transition-all group metric-accent-green"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/[0.02] rounded-full blur-2xl group-hover:bg-emerald-500/[0.04] transition-colors" />
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8.5 h-8.5 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
               <Wallet className="w-4 h-4 text-emerald-400" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[var(--text-secondary)] font-medium truncate">
-              Spent (
-              {timeframe === "month"
-                ? `${currentMonthName}`
-                : data.selectedYear}
-              )
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">
+              Spent ({timeframe === "month" ? `${currentMonthName}` : data.selectedYear})
             </span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-white tracking-tight">
+          <p className="text-xl md:text-2xl font-black text-white tracking-tight">
             {formatCurrency(activeTotal)}
           </p>
           {timeframe === "month" && data.monthChange !== 0 && (
             <div className="flex items-center gap-1 mt-2">
               {data.monthChange > 0 ? (
-                <TrendingUp className="w-3.5 h-3.5 text-red-400" />
+                <TrendingUp className="w-3.5 h-3.5 text-rose-400" />
               ) : (
                 <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
               )}
               <span
-                className={`text-xs font-semibold ${
-                  data.monthChange > 0 ? "text-red-400" : "text-emerald-400"
+                className={`text-[10px] font-bold ${
+                  data.monthChange > 0 ? "text-rose-400" : "text-emerald-400"
                 }`}
               >
                 {data.monthChange > 0 ? "+" : ""}
-                {data.monthChange}% vs last month
+                {data.monthChange}% vs last Mo
               </span>
             </div>
           )}
@@ -290,63 +288,52 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
         {/* Daily Average */}
         <motion.div
-          whileHover={{ y: -4, borderColor: "rgba(59, 130, 246, 0.3)" }}
-          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/80 p-5 transition-colors group"
+          whileHover={{ y: -3, borderColor: "rgba(59, 130, 246, 0.25)" }}
+          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/60 p-5 transition-all group metric-accent-blue"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.02] rounded-full blur-2xl group-hover:bg-blue-500/[0.04] transition-colors" />
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8.5 h-8.5 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
               <Calendar className="w-4 h-4 text-blue-400" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[var(--text-secondary)] font-medium truncate">
-              Daily Avg (
-              {timeframe === "month"
-                ? `${currentMonthName}`
-                : data.selectedYear}
-              )
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">
+              Daily Avg ({timeframe === "month" ? `${currentMonthName}` : data.selectedYear})
             </span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-white tracking-tight">
+          <p className="text-xl md:text-2xl font-black text-white tracking-tight">
             {formatCurrency(activeDailyAverage)}
           </p>
           {timeframe === "month" && (
-            <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
-              Today:{" "}
-              <span className="text-zinc-200">
-                {formatCurrency(data.totalTodaySpent)}
-              </span>
+            <p className="text-[10px] text-zinc-500 mt-2 font-bold uppercase">
+              Today: <span className="text-zinc-200">{formatCurrency(data.totalTodaySpent)}</span>
             </p>
           )}
         </motion.div>
 
         {/* Top Category */}
         <motion.div
-          whileHover={{ y: -4, borderColor: "rgba(139, 92, 246, 0.3)" }}
-          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/80 p-5 transition-colors group"
+          whileHover={{ y: -3, borderColor: "rgba(139, 92, 246, 0.25)" }}
+          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/60 p-5 transition-all group metric-accent-purple"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/[0.02] rounded-full blur-2xl group-hover:bg-purple-500/[0.04] transition-colors" />
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8.5 h-8.5 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
               <Tag className="w-4 h-4 text-purple-400" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[var(--text-secondary)] font-medium truncate">
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">
               Top Category
             </span>
           </div>
-          <p className="text-lg md:text-xl font-bold text-white truncate tracking-tight">
+          <p className="text-lg md:text-xl font-black text-white truncate tracking-tight">
             {activeTopCategory
               ? CATEGORY_CONFIG[activeTopCategory.category]?.label || "—"
               : "—"}
           </p>
           {activeTopCategory && (
-            <p className="text-xs text-emerald-400 mt-2 font-semibold">
+            <p className="text-[10px] text-purple-400 mt-2 font-bold uppercase">
               {formatCurrency(activeTopCategory.amount)}{" "}
-              <span className="text-[var(--text-muted)] font-normal">
-                ·{" "}
-                {activeTotal > 0
-                  ? Math.round((activeTopCategory.amount / activeTotal) * 100)
-                  : 0}
-                %
+              <span className="text-zinc-500 font-normal">
+                ({activeTotal > 0 ? Math.round((activeTopCategory.amount / activeTotal) * 100) : 0}%)
               </span>
             </p>
           )}
@@ -354,34 +341,28 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
         {/* Top Payment Mode */}
         <motion.div
-          whileHover={{ y: -4, borderColor: "rgba(245, 158, 11, 0.3)" }}
-          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/80 p-5 transition-colors group"
+          whileHover={{ y: -3, borderColor: "rgba(245, 158, 11, 0.25)" }}
+          className="relative overflow-hidden rounded-2xl border border-zinc-900 bg-zinc-950/60 p-5 transition-all group metric-accent-amber"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/[0.02] rounded-full blur-2xl group-hover:bg-amber-500/[0.04] transition-colors" />
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8.5 h-8.5 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
               <CreditCard className="w-4 h-4 text-amber-400" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[var(--text-secondary)] font-medium truncate">
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider truncate">
               Top Payment Mode
             </span>
           </div>
-          <p className="text-lg md:text-xl font-bold text-white truncate tracking-tight">
+          <p className="text-lg md:text-xl font-black text-white truncate tracking-tight">
             {activeTopPaymentMode
               ? PAYMENT_MODE_CONFIG[activeTopPaymentMode.mode]?.label || "—"
               : "—"}
           </p>
           {activeTopPaymentMode && (
-            <p className="text-xs text-amber-400 mt-2 font-semibold">
+            <p className="text-[10px] text-amber-400 mt-2 font-bold uppercase">
               {formatCurrency(activeTopPaymentMode.amount)}{" "}
-              <span className="text-[var(--text-muted)] font-normal">
-                ·{" "}
-                {activeTotal > 0
-                  ? Math.round(
-                      (activeTopPaymentMode.amount / activeTotal) * 100,
-                    )
-                  : 0}
-                %
+              <span className="text-zinc-500 font-normal">
+                ({activeTotal > 0 ? Math.round((activeTopPaymentMode.amount / activeTotal) * 100) : 0}%)
               </span>
             </p>
           )}
@@ -393,10 +374,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         {/* Monthly Spending Trend */}
         <motion.div
           variants={item}
-          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden"
+          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between"
         >
-          {/* Subtle radial glow background */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/[0.02] rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/[0.01] rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex items-center justify-between mb-4 relative z-10">
             <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">
@@ -408,76 +388,41 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           </div>
 
           {hasData ? (
-            <div className="relative z-10">
-              <p className="text-2xl font-bold text-white tracking-tight mb-0.5">
-                {formatCurrency(
-                  data.monthlyTrend.reduce((s, m) => s + m.amount, 0),
-                )}
-              </p>
-              <p className="text-xs text-[var(--text-muted)] mb-4">
-                Total till date
-              </p>
-              <div className="h-[200px]">
+            <div className="relative z-10 flex-grow flex flex-col justify-between">
+              <div>
+                <p className="text-2xl font-black text-white tracking-tight mb-0.5">
+                  {formatCurrency(data.monthlyTrend.reduce((s, m) => s + m.amount, 0))}
+                </p>
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-4">
+                  Total till date
+                </p>
+              </div>
+              <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.monthlyTrend} margin={{ top: 10, right: 5, left: -5, bottom: -5 }}>
+                  <AreaChart data={data.monthlyTrend} margin={{ top: 10, right: 5, left: 0, bottom: -5 }}>
                     <defs>
-                      <linearGradient
-                        id="colorAmount"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#10b981"
-                          stopOpacity={0.2}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#10b981"
-                          stopOpacity={0}
-                        />
+                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
-                      <filter id="chartGlow" x="-10%" y="-10%" width="120%" height="120%">
-                        <feDropShadow dx={0} dy={3} stdDeviation={4} floodColor="#10b981" floodOpacity={0.35} />
-                      </filter>
                     </defs>
-                    <CartesianGrid
-                      strokeDasharray="4 4"
-                      stroke="rgba(255,255,255,0.02)"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="month"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#6b7280", fontSize: 10, fontWeight: 500 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      width={35}
-                      tick={{ fill: "#6b7280", fontSize: 10, fontWeight: 500 }}
-                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
-                    />
-                    <Tooltip 
-                      content={<CustomTooltip />} 
-                      cursor={{ stroke: "rgba(16, 185, 129, 0.2)", strokeWidth: 1, strokeDasharray: "4 4" }}
-                    />
+                    <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.02)" vertical={false} />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 9, fontWeight: 600 }} />
+                    <YAxis axisLine={false} tickLine={false} width={45} tick={{ fill: "#6b7280", fontSize: 9, fontWeight: 600 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(16, 185, 129, 0.15)", strokeWidth: 1, strokeDasharray: "4 4" }} />
                     {averageMonthlySpent > 0 && (
                       <ReferenceLine
                         y={averageMonthlySpent}
-                        stroke="rgba(245, 158, 11, 0.45)"
+                        stroke="rgba(245, 158, 11, 0.3)"
                         strokeDasharray="3 3"
                         strokeWidth={1.5}
                         label={{
                           value: `Avg: ${formatCompactCurrency(averageMonthlySpent)}`,
                           fill: "#f59e0b",
-                          fontSize: 9,
-                          fontWeight: 600,
+                          fontSize: 8,
+                          fontWeight: 700,
                           position: "top",
-                          offset: 5,
+                          offset: 4,
                         }}
                       />
                     )}
@@ -485,16 +430,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       type="monotone"
                       dataKey="amount"
                       stroke="#10b981"
-                      strokeWidth={2.5}
+                      strokeWidth={2}
                       fill="url(#colorAmount)"
-                      filter="url(#chartGlow)"
                       dot={false}
-                      activeDot={{
-                        r: 5,
-                        fill: "#10b981",
-                        stroke: "#0a0a0f",
-                        strokeWidth: 2,
-                      }}
+                      activeDot={{ r: 4, fill: "#10b981", stroke: "#0a0a0f", strokeWidth: 1.5 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -508,7 +447,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         {/* Category Breakdown */}
         <motion.div
           variants={item}
-          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5"
+          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 flex flex-col justify-between"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">
@@ -517,7 +456,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           </div>
 
           {categoryData.length > 0 ? (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center flex-grow justify-between">
               <div className="h-[200px] w-full relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -525,8 +464,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       data={categoryData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={58}
-                      outerRadius={82}
+                      innerRadius={55}
+                      outerRadius={75}
                       paddingAngle={3}
                       dataKey="value"
                       stroke="none"
@@ -553,39 +492,25 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 </ResponsiveContainer>
                 {/* Center label */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-xs text-[var(--text-muted)] font-medium">
-                    Total
-                  </p>
-                  <p className="text-lg font-bold text-white tracking-tight">
+                  <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Total</p>
+                  <p className="text-base font-black text-white tracking-tight">
                     {formatCompactCurrency(activeTotal)}
                   </p>
                 </div>
               </div>
 
               {/* Legend */}
-              <div className="w-full space-y-2 mt-4 max-h-[120px] overflow-y-auto pr-1">
+              <div className="w-full space-y-2 mt-4 max-h-[120px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
                 {categoryData.slice(0, 10).map((cat) => (
-                  <div
-                    key={cat.name}
-                    className="flex items-center justify-between text-xs py-0.5"
-                  >
+                  <div key={cat.name} className="flex items-center justify-between text-xs py-0.5">
                     <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: cat.color }}
-                      />
-                      <span className="text-[var(--text-secondary)] font-medium">
-                        {cat.name}
-                      </span>
+                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: cat.color }} />
+                      <span className="text-[var(--text-secondary)] font-medium">{cat.name}</span>
                     </div>
                     <span className="text-white font-semibold">
                       {formatCurrency(cat.value)}{" "}
                       <span className="text-[var(--text-muted)] font-normal text-[10px]">
-                        (
-                        {activeTotal > 0
-                          ? Math.round((cat.value / activeTotal) * 100)
-                          : 0}
-                        %)
+                        ({activeTotal > 0 ? Math.round((cat.value / activeTotal) * 100) : 0}%)
                       </span>
                     </span>
                   </div>
@@ -593,20 +518,14 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
               </div>
             </div>
           ) : (
-            <EmptyChart
-              message={
-                timeframe === "month"
-                  ? "No expenses this month"
-                  : "No expenses this year"
-              }
-            />
+            <EmptyChart message={timeframe === "month" ? "No expenses this month" : "No expenses this year"} />
           )}
         </motion.div>
 
         {/* Recent Transactions */}
         <motion.div
           variants={item}
-          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5"
+          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 flex flex-col justify-between"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400">
@@ -614,47 +533,53 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </h3>
             <Link
               href="/expenses"
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1.5"
             >
-              View all <ArrowRight className="w-3 h-3" />
+              <span>View all</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {data.recentExpenses.length > 0 ? (
-            <div className="space-y-3.5">
-              {data.recentExpenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex items-center justify-between py-1.5 border-b border-zinc-900/60 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-sm border border-zinc-900"
-                      style={{
-                        background: `${CATEGORY_CONFIG[expense.category]?.color}15`,
-                      }}
-                    >
-                      {CATEGORY_CONFIG[expense.category]?.icon || "📌"}
+            <div className="space-y-3.5 flex-grow">
+              {data.recentExpenses.slice(0, 5).map((expense) => {
+                const config = CATEGORY_CONFIG[expense.category];
+                return (
+                  <Link
+                    href={`/expenses/${expense.id}/edit`}
+                    key={expense.id}
+                    className="flex items-center justify-between py-1.5 border-b border-zinc-900/60 last:border-0 hover:bg-zinc-900/10 rounded-xl px-1.5 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-sm border transition-transform group-hover:scale-105"
+                        style={{
+                          background: `${config?.color}08`,
+                          borderColor: `${config?.color}15`,
+                        }}
+                      >
+                        {config?.icon || "📌"}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">
+                          {expense.item}
+                        </p>
+                        <p className="text-[9px] text-zinc-500 font-bold uppercase">
+                          {config?.label}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-white">
-                        {expense.item}
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-white">
+                        {formatCurrency(expense.amount)}
                       </p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                        {CATEGORY_CONFIG[expense.category]?.label}
+                      <p className="text-[9px] text-zinc-500 font-semibold uppercase">
+                        {formatDateShort(expense.date)}
                       </p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-white">
-                      {formatCurrency(expense.amount)}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-muted)] font-medium">
-                      {formatDateShort(expense.date)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <EmptyChart message="No transactions yet" />
@@ -663,9 +588,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           {data.recentExpenses.length > 0 && (
             <Link
               href="/expenses"
-              className="flex items-center justify-center gap-1 mt-5 text-[11px] font-semibold text-[var(--text-secondary)] hover:text-emerald-400 transition-colors"
+              className="flex items-center justify-center gap-1 mt-5 text-[11px] font-bold text-zinc-400 hover:text-emerald-400 transition-colors border-t border-zinc-900 pt-3"
             >
-              View all transactions <ArrowRight className="w-3 h-3" />
+              <span>View all transactions</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           )}
         </motion.div>
@@ -676,13 +602,13 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         {/* Payment Mode Distribution */}
         <motion.div
           variants={item}
-          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5"
+          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 flex flex-col justify-between"
         >
           <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 mb-4">
             Payment Mode Distribution
           </h3>
           {paymentData.length > 0 ? (
-            <div>
+            <div className="flex flex-col flex-grow justify-between">
               <div className="h-[200px] w-full relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -690,8 +616,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       data={paymentData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={58}
-                      outerRadius={82}
+                      innerRadius={55}
+                      outerRadius={75}
                       paddingAngle={3}
                       dataKey="value"
                       stroke="none"
@@ -718,39 +644,25 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 </ResponsiveContainer>
                 {/* Center label */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-xs text-[var(--text-muted)] font-medium">
-                    Total
-                  </p>
-                  <p className="text-lg font-bold text-white tracking-tight">
+                  <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Total</p>
+                  <p className="text-base font-black text-white tracking-tight">
                     {formatCompactCurrency(activeTotal)}
                   </p>
                 </div>
               </div>
 
               {/* Legend */}
-              <div className="space-y-2 mt-4 max-h-[260px] overflow-y-auto pr-1">
+              <div className="space-y-2 mt-4 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
                 {paymentData.map((pm) => (
-                  <div
-                    key={pm.name}
-                    className="flex items-center justify-between text-xs py-0.5"
-                  >
+                  <div key={pm.name} className="flex items-center justify-between text-xs py-0.5">
                     <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: pm.color }}
-                      />
-                      <span className="text-[var(--text-secondary)] font-medium">
-                        {pm.name}
-                      </span>
+                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: pm.color }} />
+                      <span className="text-[var(--text-secondary)] font-medium">{pm.name}</span>
                     </div>
                     <span className="text-white font-semibold">
                       {formatCurrency(pm.value)}{" "}
                       <span className="text-[var(--text-muted)] font-normal text-[10px]">
-                        (
-                        {activeTotal > 0
-                          ? Math.round((pm.value / activeTotal) * 100)
-                          : 0}
-                        %)
+                        ({activeTotal > 0 ? Math.round((pm.value / activeTotal) * 100) : 0}%)
                       </span>
                     </span>
                   </div>
@@ -765,7 +677,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         {/* AI Insights Preview */}
         <motion.div
           variants={item}
-          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5"
+          className="lg:col-span-1 border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 flex flex-col justify-between"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-2">
@@ -773,7 +685,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </h3>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 flex-grow">
             {data.monthChange !== 0 && (
               <InsightRow
                 icon="📊"
@@ -797,9 +709,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             {data.dailyAverage > 0 && (
               <InsightRow
                 icon="💡"
-                text={`Your average daily spending is ${formatCurrency(
-                  data.dailyAverage,
-                )}.`}
+                text={`Your average daily spending is ${formatCurrency(data.dailyAverage)}.`}
                 type="neutral"
               />
             )}
@@ -810,10 +720,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                   PAYMENT_MODE_CONFIG[data.topPaymentMode.mode]?.label
                 } ${
                   data.totalMonthSpent > 0
-                    ? Math.round(
-                        (data.topPaymentMode.amount / data.totalMonthSpent) *
-                          100,
-                      )
+                    ? Math.round((data.topPaymentMode.amount / data.totalMonthSpent) * 100)
                     : 0
                 }% of the time.`}
                 type="neutral"
@@ -835,9 +742,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
           <Link
             href="/insights"
-            className="flex items-center justify-center gap-1 mt-5 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="flex items-center justify-center gap-1.5 mt-5 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors border-t border-zinc-900 pt-3"
           >
-            View all insights <ArrowRight className="w-3 h-3" />
+            <span>View all insights</span>
+            <ArrowRight className="w-3 h-3" />
           </Link>
         </motion.div>
 
@@ -845,14 +753,14 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         <motion.div variants={item} className="lg:col-span-1 space-y-4">
           {/* Net Worth Card */}
           <motion.div
-            whileHover={{ y: -2, borderColor: "rgba(245, 158, 11, 0.25)" }}
-            className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden group"
+            whileHover={{ y: -3, borderColor: "rgba(245, 158, 11, 0.25)" }}
+            className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden group metric-accent-amber"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/[0.02] rounded-full blur-xl pointer-events-none" />
             <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 mb-2">
               Net Worth
             </p>
-            <p className="text-2xl font-bold text-white tracking-tight">
+            <p className="text-2xl font-black text-white tracking-tight">
               {formatCompactCurrency(data.netWorth)}
             </p>
             {data.netWorthChange !== 0 && (
@@ -860,13 +768,11 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 {data.netWorthChange > 0 ? (
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                  <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
                 )}
                 <span
-                  className={`text-xs font-semibold ${
-                    data.netWorthChange > 0
-                      ? "text-emerald-400"
-                      : "text-red-400"
+                  className={`text-[10px] font-bold ${
+                    data.netWorthChange > 0 ? "text-emerald-400" : "text-rose-400"
                   }`}
                 >
                   {data.netWorthChange > 0 ? "+" : ""}
@@ -876,47 +782,49 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             )}
           </motion.div>
 
-          {/* Year Investment */}
+          {/* Month Investment */}
           <motion.div
-            whileHover={{ y: -2, borderColor: "rgba(139, 92, 246, 0.25)" }}
-            className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden group"
+            whileHover={{ y: -3, borderColor: "rgba(139, 92, 246, 0.25)" }}
+            className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5 relative overflow-hidden group metric-accent-purple"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/[0.02] rounded-full blur-xl pointer-events-none" />
             <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 mb-2">
-              This Year Invested
+              This Month Invested
             </p>
-            <p className="text-2xl font-bold text-white tracking-tight">
+            <p className="text-2xl font-black text-white tracking-tight">
               {formatCompactCurrency(data.totalYearInvestment)}
             </p>
             <Link
               href="/budget"
-              className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 mt-3"
+              className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1.5 mt-3 inline-flex"
             >
-              View details <ArrowRight className="w-3 h-3" />
+              <span>View details</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </motion.div>
 
           {/* Goal Progress (first goal) */}
           {data.goals.length > 0 && (
             <motion.div
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -3 }}
               className="border border-zinc-900 bg-zinc-950/60 rounded-2xl p-5"
             >
               <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">
-                  {data.goals[0].icon} {data.goals[0].name}
+                <p className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{data.goals[0].name}</span>
                 </p>
                 <span className="text-xs text-emerald-400 font-bold">
                   {data.goals[0].progress}%
                 </span>
               </div>
-              <div className="progress-bar mb-3">
+              <div className="progress-bar mb-3 bg-zinc-900 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="progress-fill"
+                  className="progress-fill h-full bg-gradient-to-r from-emerald-400 to-teal-500"
                   style={{ width: `${Math.min(data.goals[0].progress, 100)}%` }}
                 />
               </div>
-              <p className="text-[10px] text-[var(--text-muted)] font-medium">
+              <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
                 {formatCompactCurrency(data.goals[0].currentAmount)} /{" "}
                 {formatCompactCurrency(data.goals[0].targetAmount)}
               </p>

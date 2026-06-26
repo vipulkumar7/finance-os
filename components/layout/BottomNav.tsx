@@ -209,7 +209,7 @@ export default function BottomNav() {
       </AnimatePresence>
 
       {/* Floating Add Expense Action Button */}
-      {pathname !== "/expenses/add" && (
+      {(pathname === "/dashboard" || pathname === "/" || pathname === "/expenses") && (
         <Link
           href="/expenses/add"
           className="md:hidden fixed bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+16px)] right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-950/40 hover:scale-105 active:scale-95 transition-all duration-200 border border-emerald-300/10"

@@ -92,6 +92,7 @@ async function getDashboardData(
     latestNetWorth,
     previousNetWorth,
     goals,
+    budgetAllocations,
   ] = await Promise.all([
     prisma.expense.findMany({
       where: { userId, date: { gte: monthStart, lte: monthEnd } },
@@ -141,6 +142,9 @@ async function getDashboardData(
     prisma.goal.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
+    }),
+    prisma.budgetAllocation.findMany({
+      where: { userId },
     }),
   ]);
 
@@ -248,23 +252,22 @@ async function getDashboardData(
     });
   }
 
-  // Year investments total
-  const totalYearInvestment = yearInvestments.reduce(
-    (s: number, inv: DashboardInvestment) => {
-      return (
-        s +
-        inv.mutualFundInvestment +
-        inv.stockInvestment +
-        inv.fdInvestment +
-        inv.arbitrageInvestment +
-        inv.liquidFundInvestment +
-        inv.npsContribution +
-        inv.epfContribution +
-        inv.goldInvestment
-      );
-    },
-    0,
-  );
+  // Monthly SIP budget target
+  const INVESTMENT_TYPES = [
+    "sip",
+    "mutual funds",
+    "stocks",
+    "fd",
+    "nps",
+    "epf",
+    "gold",
+    "arbitrage",
+    "liquid fund",
+  ];
+
+  const totalYearInvestment = budgetAllocations
+    .filter((b: any) => INVESTMENT_TYPES.includes(b.type.toLowerCase()))
+    .reduce((sum: number, b: any) => sum + b.amount, 0);
 
   // Month spending percentage change
   const monthChange =

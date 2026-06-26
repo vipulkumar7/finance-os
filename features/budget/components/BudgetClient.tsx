@@ -340,7 +340,7 @@ export default function BudgetClient({
                         <input
                           type="number"
                           value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
+                          onChange={(e) => setEditAmount(e.target.value.replace(/^0+(?=\d)/, ''))}
                           className="w-full sm:w-28 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
                           placeholder="Amount"
                         />
@@ -433,7 +433,7 @@ export default function BudgetClient({
               type="number"
               placeholder="Amount (₹)"
               value={newAmount}
-              onChange={(e) => setNewAmount(e.target.value)}
+              onChange={(e) => setNewAmount(e.target.value.replace(/^0+(?=\d)/, ''))}
               className="w-full sm:w-28 bg-zinc-950 border border-zinc-900 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
               required
               min="1"
