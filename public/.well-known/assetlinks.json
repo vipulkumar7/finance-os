@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.vipul_finance.twa",
-        "sha256_cert_fingerprints": ["9E:89:B0:40:9E:DD:59:28:B7:4C:28:27:D0:A8:F9:46:E5:31:2E:08:1C:0F:3F:B4:FB:BA:E6:03:51:4E:38:97"]
+        "sha256_cert_fingerprints": ["34:81:E6:BF:2C:05:DE:DB:71:9D:62:78:2F:1A:4E:5B:35:CA:54:7E:F8:8C:6B:50:35:07:66:89:8C:0A:81:90"]
       }
     }]
