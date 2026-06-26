@@ -143,7 +143,8 @@ export default function ExpenseListClient({
             placeholder="Search expenses..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="form-input pl-10"
+            className="form-input"
+            style={{ paddingLeft: "2.5rem" }}
           />
         </div>
         <button

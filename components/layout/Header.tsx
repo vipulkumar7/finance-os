@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,9 +7,15 @@ import { getGreeting } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import SearchModal from "@/features/search/components/SearchModal";
 
-export default function Header() {
-  const { data: session } = useSession();
-  const firstName = session?.user?.name?.split(" ")[0] || "there";
+interface HeaderProps {
+  user?: {
+    name?: string | null;
+    image?: string | null;
+  };
+}
+
+export default function Header({ user }: HeaderProps) {
+  const firstName = user?.name?.split(" ")[0] || "there";
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Monitor Command/Control + K to open search modal
@@ -60,9 +65,9 @@ export default function Header() {
 
           {/* Avatar Link */}
           <Link href="/profile" className="hover:opacity-90 transition-opacity">
-            {session?.user?.image ? (
+            {user?.image ? (
               <Image
-                src={session.user.image}
+                src={user.image}
                 alt="Profile"
                 width={36}
                 height={36}

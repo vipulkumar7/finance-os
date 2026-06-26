@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:ml-[var(--sidebar-width)]">
-        <Header />
+        <Header user={session.user} />
 
         <main className="flex-1 overflow-y-auto pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom)+16px)] md:pb-8">
           <div className="page-enter">{children}</div>
